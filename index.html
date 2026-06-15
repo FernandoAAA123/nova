@@ -386,23 +386,176 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
 /* ══ RESPONSIVE MOBILE ══ */
 @media (max-width: 768px) {
   :root{--sidebar-w:0px;--channels-w:100vw;--members-w:0px;}
-  #app{position:relative;}
-  #server-bar{position:fixed;bottom:0;left:0;right:0;top:auto;width:100%;height:58px;flex-direction:row;justify-content:center;padding:0 12px;border-right:none;border-top:1px solid var(--border);z-index:100;overflow-x:auto;overflow-y:hidden;gap:6px;}
-  #server-bar .server-sep{width:1px;height:28px;margin:0 2px;}
-  #channels-panel{position:fixed;inset:0;bottom:58px;z-index:50;transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);width:100%;}
-  #channels-panel.mobile-open{transform:translateX(0);}
-  #chat-area{width:100%;margin-bottom:58px;}
+
+  /* App container full screen */
+  #app{position:fixed;inset:0;overflow:hidden;}
+
+  /* Bottom nav bar (servers) */
+  #server-bar{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    width:100%;height:60px;
+    flex-direction:row;justify-content:flex-start;
+    padding:0 10px;
+    border-right:none;border-top:1px solid var(--border);
+    z-index:200;
+    overflow-x:auto;overflow-y:hidden;
+    gap:4px;
+    scrollbar-width:none;
+  }
+  #server-bar::-webkit-scrollbar{display:none;}
+  #server-bar .server-sep{width:1px;height:28px;margin:0 4px;flex-shrink:0;}
+  #server-bar .server-icon{flex-shrink:0;}
+
+  /* Slide-in sidebar (channels panel) */
+  #channels-panel{
+    position:fixed;
+    top:0;left:0;bottom:60px;
+    width:min(300px,85vw);
+    z-index:150;
+    transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow:none;
+  }
+  #channels-panel.mobile-open{
+    transform:translateX(0);
+    box-shadow:8px 0 40px rgba(0,0,0,.5);
+  }
+
+  /* Overlay when sidebar is open */
+  #mobile-overlay{
+    display:none;
+    position:fixed;inset:0;bottom:60px;
+    background:rgba(0,0,0,.55);
+    z-index:140;
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
+  }
+  #mobile-overlay.show{display:block;}
+
+  /* Chat area fills remaining space */
+  #chat-area{
+    position:fixed;
+    top:0;left:0;right:0;
+    bottom:60px;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* Messages scrollable area */
+  #messages{
+    flex:1;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:8px 10px 4px;
+    overscroll-behavior:contain;
+  }
+
+  /* Input stays above bottom bar */
+  #input-area{padding:0 8px 10px;flex-shrink:0;}
+  #input-box{border-radius:12px;}
+  #msg-input{font-size:16px;} /* Prevents iOS zoom on focus */
+
+  /* Picker popup repositioned for mobile */
+  .picker-popup{
+    position:fixed;
+    bottom:70px;
+    left:4px;right:4px;
+    width:auto;
+    max-height:55vh;
+    border-radius:16px;
+  }
+
+  /* Header */
+  #chat-header{padding:0 10px;gap:6px;flex-shrink:0;}
+  #chat-header .ch-name{font-size:.85rem;}
+  #mobile-menu-btn{display:flex!important;}
+
+  /* Hide header actions that don't fit — show in overflow */
+  .header-actions .icon-btn:nth-child(n+5){display:none;}
+
+  /* Members panel hidden on mobile */
   #members-panel{display:none!important;}
-  #chat-header .ch-name::before{content:'☰ ';cursor:pointer;color:var(--text-3);}
-  .live-badge{top:auto;bottom:68px;right:12px;}
+
+  /* Profile popup full-width on mobile */
+  #profile-popup{width:calc(100vw - 24px);left:12px!important;right:12px!important;}
+
+  /* Context menu safe positioning */
+  #context-menu{max-width:calc(100vw - 24px);}
+
+  /* Modals full screen on mobile */
+  .modal{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:calc(100vh - 70px)!important;
+    border-radius:20px 20px 0 0;
+    margin:0;
+    padding:20px 16px;
+  }
+  .modal-overlay{align-items:flex-end;padding:0;}
+
+  /* Server settings modal */
+  #server-settings-modal{max-height:92vh!important;border-radius:20px 20px 0 0;overflow:hidden;}
+
+  /* Toast position */
+  .notification-toast{bottom:70px;right:12px;left:12px;max-width:none;text-align:center;}
+
+  /* Live badge */
+  .live-badge{top:auto;bottom:68px;right:10px;}
+
+  /* Message hover actions — always visible on touch */
+  .msg-hover-actions{display:flex;position:relative;right:auto;top:auto;margin-top:4px;background:none;border:none;box-shadow:none;padding:0;}
+  .msg-wrap:hover .msg-hover-actions{display:flex;}
+
+  /* Call bar */
+  #call-bar{flex-wrap:wrap;gap:6px;padding:6px 10px;}
+  #call-bar .call-btn{flex:1;min-width:80px;}
+
+  /* Video modal controls */
+  .video-controls{gap:8px;}
+  .vid-btn{width:44px;height:44px;}
 }
+
+/* ══ SMALL PHONES (≤480px) ══ */
 @media (max-width: 480px) {
-  .auth-card{padding:24px 20px;border-radius:16px;}
-  .auth-card h1{font-size:1.5rem;}
-  #input-area{padding:0 8px 10px;}
-  #messages{padding:8px 10px 4px;}
-  .msg-group{gap:8px;}
+  /* Auth */
+  #auth-screen{padding:0;align-items:flex-end;}
+  .auth-card{
+    width:100%;
+    border-radius:20px 20px 0 0;
+    padding:28px 20px 32px;
+    max-height:94vh;
+    overflow-y:auto;
+  }
+  .auth-card h1{font-size:1.45rem;}
+
+  /* Messages */
+  .msg-group{gap:8px;margin-top:14px;}
   .msg-avatar{width:30px;height:30px;border-radius:8px;}
+  .msg-content{font-size:.875rem;}
+  .msg-continuation{padding-left:38px;}
+
+  /* Input */
+  #input-area{padding:0 6px 8px;}
+  .input-btn{padding:3px 4px;font-size:.95rem;}
+
+  /* Header buttons hidden on very small screens */
+  .header-actions .icon-btn:nth-child(n+4){display:none;}
+
+  /* Picker */
+  .picker-grid{grid-template-columns:repeat(7,1fr);}
+  .picker-item{font-size:1.3rem;padding:4px 2px;}
+
+  /* Emoji/sticker compact */
+  .sticker-grid{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ══ TABLET (769px–1024px) ══ */
+@media (min-width:769px) and (max-width:1024px){
+  :root{--members-w:0px;}
+  #members-panel{display:none!important;}
+  .picker-popup{right:8px;}
 }
 
 /* ══ SERVER SETTINGS PANEL ══ */
@@ -531,6 +684,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
 
 <!-- MAIN APP -->
 <div id="app">
+  <!-- Mobile sidebar overlay -->
+  <div id="mobile-overlay" onclick="closeMobileSidebar()"></div>
   <div id="server-bar">
     <div class="server-icon active" id="dm-btn" title="Mensajes directos" onclick="selectServer('__dm__')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
@@ -2709,19 +2864,96 @@ function formatContent(text){
 }
 
 // ── RESPONSIVE MOBILE ──
+function isMobileView(){return window.innerWidth<=768;}
+
 function checkMobile(){
-  const isMobile=window.innerWidth<=768;
+  const mobile=isMobileView();
   const mobileBtn=document.getElementById('mobile-menu-btn');
-  if(mobileBtn)mobileBtn.style.display=isMobile?'flex':'none';
-  // Remove CSS ::before on desktop
+  if(mobileBtn)mobileBtn.style.display=mobile?'flex':'none';
+  // On desktop, always show channels panel
+  if(!mobile){
+    document.getElementById('channels-panel').classList.remove('mobile-open');
+    const ov=document.getElementById('mobile-overlay');
+    if(ov)ov.classList.remove('show');
+  }
 }
-window.addEventListener('resize',checkMobile);
-// Close sidebar when channel selected on mobile
+
+function toggleMobileSidebar(){
+  const panel=document.getElementById('channels-panel');
+  const ov=document.getElementById('mobile-overlay');
+  const isOpen=panel.classList.contains('mobile-open');
+  if(isOpen){
+    panel.classList.remove('mobile-open');
+    if(ov)ov.classList.remove('show');
+  } else {
+    panel.classList.add('mobile-open');
+    if(ov)ov.classList.add('show');
+  }
+}
+
+function closeMobileSidebar(){
+  document.getElementById('channels-panel').classList.remove('mobile-open');
+  const ov=document.getElementById('mobile-overlay');
+  if(ov)ov.classList.remove('show');
+}
+
+// Close sidebar on channel/DM select when on mobile
 const _origSelectChannel2=window.selectChannel;
-window.selectChannelMobile=function(id){
+const _channelSelectProxy=function(id){
   if(typeof selectChannel==='function')selectChannel(id);
-  closeMobileSidebar();
+  if(isMobileView())closeMobileSidebar();
 };
+
+// Intercept channel clicks to close sidebar on mobile
+document.addEventListener('click',function(e){
+  const item=e.target.closest('.channel-item,.dm-item');
+  if(item&&isMobileView())setTimeout(closeMobileSidebar,120);
+});
+
+// Handle swipe-right to open sidebar on mobile
+(function(){
+  let startX=0,startY=0,swiping=false;
+  document.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    swiping=startX<30; // only trigger from left edge
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!swiping||!isMobileView())return;
+    const dx=e.changedTouches[0].clientX-startX;
+    const dy=Math.abs(e.changedTouches[0].clientY-startY);
+    if(dx>60&&dy<60)toggleMobileSidebar();
+    swiping=false;
+  },{passive:true});
+  // Swipe left to close sidebar
+  document.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+  },{passive:true});
+  document.getElementById('channels-panel')?.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+  },{passive:true});
+  document.getElementById('channels-panel')?.addEventListener('touchend',function(e){
+    if(!isMobileView())return;
+    const dx=e.changedTouches[0].clientX-startX;
+    const dy=Math.abs(e.changedTouches[0].clientY-startY);
+    if(dx<-60&&dy<60)closeMobileSidebar();
+  },{passive:true});
+})();
+
+// Fix picker popup position on mobile when near bottom
+function adjustPickerPosition(){
+  if(!isMobileView())return;
+  const picker=document.getElementById('emoji-picker');
+  if(!picker||!picker.classList.contains('open'))return;
+  picker.style.bottom='70px';
+  picker.style.left='4px';
+  picker.style.right='4px';
+  picker.style.width='auto';
+}
+
+window.addEventListener('resize',checkMobile);
 document.addEventListener('DOMContentLoaded',checkMobile);
 window.addEventListener('load',checkMobile);
 
