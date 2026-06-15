@@ -59,11 +59,29 @@
   --sidebar-w:68px;--channels-w:248px;--members-w:240px;
   --font:'Plus Jakarta Sans',sans-serif;
 }
+/* Nova Classic — el default, renombrado */
+/* (usa :root, sin data-theme) */
+
+/* Morado intenso */
+[data-theme="violet"]{--bg-0:#08050f;--bg-1:#0e0a18;--bg-2:#140f22;--bg-3:#1c152e;--bg-4:#251c3a;--bg-5:#2e2445;--accent:#8b5cf6;--accent-h:#7c3aed;--accent-g:#c4b5fd;--accent-glow:rgba(139,92,246,.25);}
+/* Negro/Blanco */
 [data-theme="bw"]{--bg-0:#000;--bg-1:#0c0c0c;--bg-2:#141414;--bg-3:#1c1c1c;--bg-4:#242424;--bg-5:#2e2e2e;--accent:#e0e0e0;--accent-h:#bbb;--accent-g:#fff;--accent-glow:rgba(255,255,255,.08);--text-0:#fff;--text-1:#d0d0d0;--text-2:#777;--text-3:#444;--border:rgba(255,255,255,.07);}
+/* Azul */
 [data-theme="blue"]{--bg-0:#07090f;--bg-1:#0c0f1a;--bg-2:#111523;--bg-3:#181d2e;--bg-4:#1f2538;--bg-5:#262d44;--accent:#3b82f6;--accent-h:#2563eb;--accent-g:#93c5fd;--accent-glow:rgba(59,130,246,.2);}
+/* Cian */
+[data-theme="cyan"]{--bg-0:#050e10;--bg-1:#091518;--bg-2:#0e1d21;--bg-3:#14262b;--bg-4:#1a3036;--bg-5:#203b42;--accent:#06b6d4;--accent-h:#0891b2;--accent-g:#67e8f9;--accent-glow:rgba(6,182,212,.2);}
+/* Verde */
 [data-theme="green"]{--bg-0:#07100a;--bg-1:#0c160f;--bg-2:#111d15;--bg-3:#18261c;--bg-4:#1f2f23;--bg-5:#263a2a;--accent:#10b981;--accent-h:#059669;--accent-g:#6ee7b7;--accent-glow:rgba(16,185,129,.2);}
+/* Naranja */
+[data-theme="orange"]{--bg-0:#100a04;--bg-1:#180f07;--bg-2:#20140b;--bg-3:#281a10;--bg-4:#322016;--bg-5:#3e281c;--accent:#f97316;--accent-h:#ea6f10;--accent-g:#fdba74;--accent-glow:rgba(249,115,22,.2);}
+/* Rojo */
 [data-theme="red"]{--bg-0:#0f0707;--bg-1:#170a0a;--bg-2:#1f0f0f;--bg-3:#271515;--bg-4:#2f1b1b;--bg-5:#382222;--accent:#f43f5e;--accent-h:#e11d48;--accent-g:#fda4af;--accent-glow:rgba(244,63,94,.2);}
+/* Rosa */
 [data-theme="pink"]{--bg-0:#0f070c;--bg-1:#170a11;--bg-2:#1f0f18;--bg-3:#27151f;--bg-4:#2f1b27;--bg-5:#38222f;--accent:#ec4899;--accent-h:#db2777;--accent-g:#f9a8d4;--accent-glow:rgba(236,72,153,.2);}
+/* Dorado oscuro */
+[data-theme="gold"]{--bg-0:#0d0b04;--bg-1:#151108;--bg-2:#1c160b;--bg-3:#251e10;--bg-4:#2e2616;--bg-5:#38301c;--accent:#d97706;--accent-h:#b45309;--accent-g:#fcd34d;--accent-glow:rgba(217,119,6,.2);}
+/* Medianoche (azul muy oscuro casi negro) */
+[data-theme="midnight"]{--bg-0:#02030a;--bg-1:#04060f;--bg-2:#060a16;--bg-3:#0a0f1e;--bg-4:#0e1526;--bg-5:#131c30;--accent:#4f6ef7;--accent-h:#3b58e8;--accent-g:#93a8fb;--accent-glow:rgba(79,110,247,.2);--text-2:#6070a0;--text-3:#3a4870;}
 
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg-0);color:var(--text-1);}
@@ -1462,6 +1480,15 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     </select>
     <label>Tema / Descripción</label>
     <input type="text" id="edit-ch-topic" placeholder="¿De qué trata este canal?">
+    <div id="edit-ch-forum-cover" style="display:none;margin-top:12px;">
+      <label>Imagen de portada del foro</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+        <div id="edit-ch-cover-prev" style="width:80px;height:50px;border-radius:8px;background:var(--bg-4);overflow:hidden;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.5rem;" onclick="document.getElementById('edit-ch-cover-file').click()">🖼️</div>
+        <input type="file" id="edit-ch-cover-file" accept="image/*" style="display:none" onchange="handleImgUpload(this,'edit-ch-cover-prev','edit-ch-cover-b64',600,200)">
+        <input type="hidden" id="edit-ch-cover-b64">
+        <div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('edit-ch-cover-file').click()">Cambiar</button><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="document.getElementById('edit-ch-cover-prev').innerHTML='🖼️';document.getElementById('edit-ch-cover-b64').value='__clear__'">Quitar</button></div>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
       <div class="toggle" id="edit-ch-private" onclick="this.classList.toggle('on')"></div>
       <span style="font-size:.875rem;color:var(--text-1);">Canal privado</span>
@@ -1591,11 +1618,35 @@ function translateAuthError(code){
   const map={'auth/email-already-in-use':'Correo ya registrado.','auth/invalid-email':'Correo inválido.','auth/weak-password':'Contraseña muy débil (mín. 6 caracteres).','auth/user-not-found':'No existe cuenta con ese correo.','auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Credenciales incorrectas.','auth/too-many-requests':'Demasiados intentos. Espera un momento.'};
   return map[code]||'Error: '+code;
 }
+// ── EMAIL KEY helper (convierte email a clave válida para Firebase) ──
+function emailToKey(email){ return (email||'').toLowerCase().replace(/\./g,'_').replace(/@/g,'__at__'); }
+
 async function initUserProfile(firebaseUser,displayName,photoURL){
-  const snap=await fbGet('users/'+firebaseUser.uid);
+  const uid=firebaseUser.uid;
+  const email=firebaseUser.email||'';
+  const eKey=emailToKey(email);
+
+  // 1. Try to find profile by UID (current project)
+  let snap=await fbGet('users/'+uid);
+
+  // 2. If not found, try email backup (survives migration)
+  if(!snap.exists()&&eKey){
+    const emailSnap=await fbGet('usersByEmail/'+eKey);
+    if(emailSnap.exists()){
+      // Restore profile under new UID
+      const recovered={...emailSnap.val(),uid};
+      await fbSet('users/'+uid,recovered);
+      snap=await fbGet('users/'+uid);
+      showToast('✅ Perfil recuperado desde respaldo');
+    }
+  }
+
+  // 3. Create fresh profile if still nothing
   if(!snap.exists()){
     const tag='#'+String(Math.floor(Math.random()*9000+1000));
-    await fbSet('users/'+firebaseUser.uid,{uid:firebaseUser.uid,name:displayName||'Usuario',tag,email:firebaseUser.email||'',avatarUrl:photoURL||'',avatarColor:'#5865f2',status:'online',customStatus:'',createdAt:Date.now()});
+    const profile={uid,name:displayName||'Usuario',tag,email,avatarUrl:photoURL||'',avatarColor:'#7c3aed',status:'online',customStatus:'',createdAt:Date.now()};
+    await fbSet('users/'+uid,profile);
+    if(eKey)await fbSet('usersByEmail/'+eKey,profile);
   }
 }
 async function doSignOut(){
@@ -1624,9 +1675,19 @@ async function onUserLoggedIn(firebaseUser){
   state.avatarSelectedColor=state.currentUser.avatarColor;
 
   const presRef=fbRef('presence/'+state.currentUser.uid);
-  await window._fbSet(presRef,{uid:state.currentUser.uid,name:state.currentUser.name,avatarUrl:state.currentUser.avatarUrl||'',avatarColor:state.currentUser.avatarColor,status:state.currentUser.status||'online',customStatus:state.currentUser.customStatus||'',ts:Date.now()});
+  const presData={uid:state.currentUser.uid,name:state.currentUser.name,avatarUrl:state.currentUser.avatarUrl||'',avatarColor:state.currentUser.avatarColor,status:state.currentUser.status||'online',customStatus:state.currentUser.customStatus||'',ts:Date.now()};
+  await window._fbSet(presRef,presData);
+  // Sync email backup
+  const eKey=emailToKey(state.currentUser.email||'');
+  if(eKey){const snap2=await fbGet('users/'+state.currentUser.uid);if(snap2.exists())fbSet('usersByEmail/'+eKey,snap2.val());}
   window._fbOnDisconnect(presRef).remove();
   window._fbOnDisconnect(fbRef('typing/'+state.currentUser.uid)).remove();
+  // Set offline immediately when tab closes (faster than Firebase onDisconnect ~60s)
+  window.addEventListener('beforeunload',()=>{
+    // sendBeacon keeps request alive after page close
+    const uid=state.currentUser?.uid;if(!uid)return;
+    try{fbSet('presence/'+uid+'/status','offline');fbSet('presence/'+uid+'/ts',Date.now());}catch(e){}
+  });
 
   subscribePresence();
   subscribeServers();
@@ -1828,17 +1889,74 @@ function renderChannelsPanel(){
     return;
   }
   if(!srv)return;
-  (srv.channels||[]).forEach(cat=>{
-    const group=document.createElement('div');group.className='channel-group';
-    group.innerHTML=`<div class="channel-group-header"><span>▸</span><span>${cat.name}</span><button class="icon-btn add-ch" onclick="openAddChannelModalForCat('${cat.id}')">＋</button></div>`;
-    (cat.children||[]).forEach(ch=>{
+  (srv.channels||[]).forEach((cat,catIdx)=>{
+    const group=document.createElement('div');
+    group.className='channel-group';
+    group.dataset.catid=cat.id;
+    // Category header with edit + drag handle
+    const hdr=document.createElement('div');
+    hdr.className='channel-group-header';
+    hdr.draggable=isServerAdmin(srv);
+    hdr.innerHTML=`
+      ${isServerAdmin(srv)?`<span style="cursor:grab;color:var(--text-3);opacity:.5;font-size:.8rem;margin-right:2px;" title="Arrastrar categoría">⠿</span>`:''}
+      <span style="flex:1;">${cat.icon?`<img src="${cat.icon}" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px;">`:''}${cat.name}</span>
+      ${isServerAdmin(srv)?`
+        <button class="icon-btn add-ch" onclick="editCategory('${cat.id}')" title="Editar categoría" style="font-size:.7rem;">✏️</button>
+        <button class="icon-btn add-ch" onclick="openAddChannelModalForCat('${cat.id}')" title="Nuevo canal"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      `:''}`;
+    // Drag category
+    if(isServerAdmin(srv)){
+      hdr.addEventListener('dragstart',e=>{e.dataTransfer.setData('catIdx',catIdx);e.dataTransfer.setData('type','cat');});
+      hdr.addEventListener('dragover',e=>{e.preventDefault();group.style.outline='1px solid var(--accent)';});
+      hdr.addEventListener('dragleave',()=>group.style.outline='');
+      hdr.addEventListener('drop',e=>{
+        e.preventDefault();group.style.outline='';
+        if(e.dataTransfer.getData('type')!=='cat')return;
+        const from=parseInt(e.dataTransfer.getData('catIdx'));
+        const to=catIdx;
+        if(from===to)return;
+        const [moved]=srv.channels.splice(from,1);
+        srv.channels.splice(to,0,moved);
+        saveServers();renderChannelsPanel();
+      });
+    }
+    group.appendChild(hdr);
+
+    (cat.children||[]).forEach((ch,chIdx)=>{
       const unread=state.unreadCounts[ch.id]||0;
       const item=document.createElement('div');
       item.className='channel-item'+(ch.id===state.currentChannelId?' active':'');
-      item.innerHTML=`<span class="ch-icon">${CHAN_ICONS[ch.type]||CHAN_ICONS.text}</span>${ch.name}${ch.private?'<span style="font-size:.7rem;color:var(--text-3);margin-left:2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>':''}${unread?`<div class="unread-badge">${unread}</div>`:''}<div class="ch-actions">${isServerAdmin(srv)?`<button class="icon-btn" onclick="openEditChannel('${ch.id}','${srv.id}')" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn" onclick="deleteChannel('${ch.id}','${srv.id}')" title="Eliminar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>`:''}</div>`;
+      item.draggable=isServerAdmin(srv);
+      item.dataset.chid=ch.id;
+
+      // Forum channel: show cover image if set
+      const forumCover=ch.type==='forum'&&ch.coverImg?`<img src="${ch.coverImg}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;flex-shrink:0;">`:'';
+
+      item.innerHTML=`${forumCover||`<span class="ch-icon">${CHAN_ICONS[ch.type]||CHAN_ICONS.text}</span>`}${ch.name}${ch.private?'<span style="font-size:.7rem;color:var(--text-3);margin-left:2px;">🔒</span>':''}${unread?`<div class="unread-badge">${unread}</div>`:''}<div class="ch-actions">${isServerAdmin(srv)?`<button class="icon-btn" onclick="openEditChannel('${ch.id}','${srv.id}')" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="icon-btn" onclick="deleteChannel('${ch.id}','${srv.id}')" title="Eliminar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>`:''}</div>`;
       item.onclick=e=>{if(!e.target.closest('.ch-actions'))selectChannel(ch.id);};
+
+      // Drag channel within category
+      if(isServerAdmin(srv)){
+        item.addEventListener('dragstart',e=>{e.dataTransfer.setData('chIdx',chIdx);e.dataTransfer.setData('catId',cat.id);e.dataTransfer.setData('type','ch');e.stopPropagation();});
+        item.addEventListener('dragover',e=>{e.preventDefault();item.style.outline='1px solid var(--accent)';});
+        item.addEventListener('dragleave',()=>item.style.outline='');
+        item.addEventListener('drop',e=>{
+          e.preventDefault();item.style.outline='';
+          if(e.dataTransfer.getData('type')!=='ch')return;
+          const from=parseInt(e.dataTransfer.getData('chIdx'));
+          const fromCatId=e.dataTransfer.getData('catId');
+          const to=chIdx;
+          if(fromCatId===cat.id&&from===to)return;
+          // Move within same cat or across cats
+          const srcCat=srv.channels.find(c=>c.id===fromCatId);
+          if(!srcCat)return;
+          const [moved]=srcCat.children.splice(from,1);
+          cat.children.splice(to,0,moved);
+          saveServers();renderChannelsPanel();
+        });
+      }
+
       group.appendChild(item);
-      // Render threads under channel
       (ch.threads||[]).forEach(thread=>{
         const titem=document.createElement('div');
         titem.className='thread-item'+(thread.id===state.currentChannelId?' active':'');
@@ -1855,12 +1973,14 @@ function renderChatArea(){
   const srv=getServer(state.currentServerId);
   const ch=isDM?null:getChannel(state.currentChannelId,srv);
   const nameEl=document.getElementById('chat-channel-name');
+  // Always restore input area first — forum hides it
+  const inputArea=document.getElementById('input-area');
+  if(inputArea)inputArea.style.display='';
   if(state.currentChannelId&&state.currentChannelId.startsWith('dm_')){
     const info=state.dmConversations[state.currentDmUid]||{};
     nameEl.innerHTML=`@ ${info.name||'DM'}`;
   }else if(ch){nameEl.innerHTML=`${CHAN_ICONS[ch.type]||CHAN_ICONS.text} ${ch.name}`;}
   else{nameEl.textContent='Selecciona un canal';}
-  // Forum channel — show posts view
   if(ch?.type==='forum'){renderForumPosts(ch);return;}
   renderMessages();renderTyping();
 }
@@ -1875,7 +1995,8 @@ function renderForumPosts(ch){
   if(inputArea)inputArea.style.display='none';
   // Header button to create post
   el.innerHTML=`
-    <div style="padding:16px 0 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    ${ch.coverImg?`<div style="height:120px;border-radius:12px;margin-bottom:12px;background:url('${ch.coverImg}') center/cover;position:relative;"><div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg-2));border-radius:12px;"></div></div>`:''}
+    <div style="padding:4px 0 10px;display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:.85rem;color:var(--text-2);">${posts.length} publicacion${posts.length!==1?'es':''}</div>
       <button class="btn btn-primary btn-sm" onclick="openNewForumPost('${ch.id}')">✏️ Nueva publicación</button>
     </div>
@@ -1934,10 +2055,11 @@ function renderMessages(){
   const msgs=state.messages[state.currentChannelId]||[];
   if(!msgs.length){el.innerHTML='<div class="empty-state"><div class="big-icon">💬</div><h3>¡Sé el primero en escribir!</h3></div>';return;}
   el.innerHTML='';
-  let prevUid=null;
+  let prevUid=null,prevTs=0;
   msgs.forEach(msg=>{
     if(msg.deleted)return;
-    const isCont=msg.uid===prevUid&&!msg.sticker&&!msg.replyTo&&!msg.imageUrl;
+    // Continuation: same user, within 5 minutes, no special content
+    const isCont=msg.uid===prevUid&&!msg.sticker&&!msg.replyTo&&!msg.poll&&!msg.event&&(msg.ts-prevTs)<5*60*1000;
     const wrap=document.createElement('div');
     wrap.className='msg-wrap'+(msg.pinned?' highlighted':'');
     wrap.dataset.msgid=msg.id;
@@ -1952,7 +2074,7 @@ function renderMessages(){
       const avatarContent=msg.avatarUrl?`<img src="${msg.avatarUrl}" onerror="this.style.display='none'">`:(msg.name||'?')[0].toUpperCase();
       wrap.innerHTML=replyHtml+`<div class="msg-group"><div class="msg-avatar" style="${avatarStyle}" data-uid="${msg.uid}">${avatarContent}</div><div class="msg-body"><div class="msg-meta"><span class="msg-author" style="color:${msg.color}" data-uid="${msg.uid}">${msg.name}${botBadge}</span><span class="msg-time">${fmtDateTime(msg.ts)}</span>${msg.pinned?'<span style="font-size:.65rem;color:var(--yellow);">📌</span>':''}</div><div class="msg-content">${formatContent(msg.content)}${mediaHtml(msg)}</div>${msg.edited?'<span class="msg-edited">(editado)</span>':''}${reactionsHtml(msg)}</div><div class="msg-hover-actions">${hoverBtns(msg,isMe)}</div></div>`;
     }
-    el.appendChild(wrap);prevUid=msg.uid;
+    el.appendChild(wrap);prevUid=msg.uid;prevTs=msg.ts;
   });
   el.scrollTop=el.scrollHeight;
 }
@@ -2225,6 +2347,44 @@ function createChannel(){
   const cat=srv.channels.find(c=>c.id===catId);if(cat)cat.children.push(ch);
   saveServers();closeModal('add-channel-modal');selectChannel(ch.id);showToast('✅ Canal #'+name+' creado');
 }
+// ── CATEGORY EDITOR ──
+function editCategory(catId){
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  const cat=srv.channels.find(c=>c.id===catId);if(!cat)return;
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+  overlay.innerHTML=`<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:16px;padding:24px;width:380px;max-width:95vw;box-shadow:0 32px 64px rgba(0,0,0,.6);">
+    <h3 style="color:var(--text-0);margin-bottom:16px;">Editar categoría</h3>
+    <label style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);">Nombre</label>
+    <input id="_cat-name" type="text" value="${cat.name}" style="width:100%;background:var(--bg-3);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text-0);font-family:var(--font);font-size:.9rem;outline:none;margin-top:6px;margin-bottom:12px;">
+    <label style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);">Ícono (imagen pequeña)</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+      <div id="_cat-icon-prev" style="width:36px;height:36px;border-radius:8px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('_cat-icon-file').click()">${cat.icon?`<img src="${cat.icon}" style="width:100%;height:100%;object-fit:cover;">`:'📁'}</div>
+      <input id="_cat-icon-file" type="file" accept="image/*" style="display:none" onchange="(function(i){if(!i.files[0])return;compressImagePNG(i.files[0],64,64,50,b64=>{const p=document.getElementById('_cat-icon-prev');p.innerHTML='<img src=\\''+b64+'\\' style=\\'width:100%;height:100%;object-fit:cover;\\'>';p.dataset.b64=b64;})})(this)">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('_cat-icon-file').click()">Subir imagen</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('_cat-icon-prev').innerHTML='📁';document.getElementById('_cat-icon-prev').dataset.b64='';">Quitar</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="this.closest('[style*=fixed]').remove()">Cancelar</button>
+      <button class="btn btn-primary" onclick="(function(){
+        const name=document.getElementById('_cat-name').value.trim();
+        if(!name)return;
+        const b64=document.getElementById('_cat-icon-prev').dataset.b64||'';
+        const srv=getServer(state.currentServerId);
+        const cat=srv.channels.find(c=>c.id==='${catId}');
+        if(!cat)return;
+        cat.name=name;
+        if(b64)cat.icon=b64;else if(b64==='')cat.icon='';
+        saveServers();renderChannelsPanel();showToast('✅ Categoría actualizada');
+        document.querySelector('[style*=fixed][style*=backdrop]').remove();
+      })()">Guardar</button>
+    </div>
+  </div>`;
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  document.body.appendChild(overlay);
+  document.getElementById('_cat-name').focus();
+}
+
 // ── EDIT CHANNEL ──
 function openEditChannel(chId, srvId){
   const srv=getServer(srvId);if(!srv)return;
@@ -2238,6 +2398,15 @@ function openEditChannel(chId, srvId){
   document.getElementById('edit-ch-topic').value=ch.topic||'';
   const tog=document.getElementById('edit-ch-private');
   ch.private?tog.classList.add('on'):tog.classList.remove('on');
+  // Forum cover
+  const coverSection=document.getElementById('edit-ch-forum-cover');
+  coverSection.style.display=ch.type==='forum'?'':'none';
+  document.getElementById('edit-ch-cover-b64').value='';
+  const coverPrev=document.getElementById('edit-ch-cover-prev');
+  if(ch.coverImg){coverPrev.innerHTML=`<img src="${ch.coverImg}" style="width:100%;height:100%;object-fit:cover;">`;}
+  else{coverPrev.innerHTML='🖼️';}
+  // Show/hide cover on type change
+  document.getElementById('edit-ch-type').onchange=function(){coverSection.style.display=this.value==='forum'?'':'none';};
   openModal('edit-channel-modal');
 }
 function saveEditChannel(){
@@ -2253,6 +2422,9 @@ function saveEditChannel(){
   ch.type=document.getElementById('edit-ch-type').value;
   ch.topic=document.getElementById('edit-ch-topic').value.trim();
   ch.private=document.getElementById('edit-ch-private').classList.contains('on');
+  const coverB64=document.getElementById('edit-ch-cover-b64').value;
+  if(coverB64==='__clear__')ch.coverImg='';
+  else if(coverB64)ch.coverImg=coverB64;
   saveServers();closeModal('edit-channel-modal');
   renderChannelsPanel();
   if(state.currentChannelId===chId)renderChatArea();
@@ -3091,6 +3263,9 @@ function saveUserSettings(){
   state.currentUser={...state.currentUser,name,displayName,bio,avatarUrl,bannerUrl,customStatus,status,avatarColor,social,privacy};
   const userData={uid:state.currentUser.uid,name,displayName,tag:state.currentUser.tag,email:state.currentUser.email||'',avatarUrl,bannerUrl,avatarColor,status,customStatus,bio,social,privacy,createdAt:state.currentUser.createdAt||Date.now()};
   fbSet('users/'+state.currentUser.uid,userData);
+  // Keep email backup in sync so profile survives Firebase migration
+  const eKey=emailToKey(state.currentUser.email||'');
+  if(eKey)fbSet('usersByEmail/'+eKey,userData);
   fbSet('presence/'+state.currentUser.uid,{uid:state.currentUser.uid,name,avatarUrl,avatarColor,status,customStatus,ts:Date.now()});
   state.servers.forEach(srv=>{const m=(srv.members||[]).find(m=>(m.uid||m.id)===state.currentUser.uid);if(m){m.name=name;m.color=avatarColor;m.avatarUrl=avatarUrl;m.avatarColor=avatarColor;}});
   saveServers();closeModal('user-settings-modal');updateUserBar();renderAll();showToast('✅ Perfil actualizado');
@@ -3709,8 +3884,17 @@ function selectServerColor(el){document.querySelectorAll('#server-color-picker .
 function getServer(id){return state.servers.find(s=>s.id===id);}
 function getChannel(id,srv){if(!id||!srv)return null;for(const cat of(srv.channels||[])){const ch=(cat.children||[]).find(c=>c.id===id);if(ch)return ch;}return null;}
 function genId(n=10){return Math.random().toString(36).substring(2,2+n);}
-function fmtTime(ts){return new Date(ts).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});}
-function fmtDateTime(ts){const d=new Date(ts),t=new Date();return d.toDateString()===t.toDateString()?'Hoy '+fmtTime(ts):d.toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+fmtTime(ts);}
+function fmtTime(ts){
+  return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDateTime(ts){
+  const d=new Date(ts),now=new Date();
+  const sameDay=d.toDateString()===now.toDateString();
+  const yesterday=new Date(now-86400000).toDateString()===d.toDateString();
+  if(sameDay)return'Hoy '+fmtTime(ts);
+  if(yesterday)return'Ayer '+fmtTime(ts);
+  return d.toLocaleDateString([],{day:'2-digit',month:'2-digit',year:'numeric'})+' '+fmtTime(ts);
+}
 
 // ── INIT ──
 document.addEventListener('firebase-ready',()=>{
@@ -3744,7 +3928,47 @@ document.addEventListener('firebase-ready',()=>{
     }
   });
 });
-document.addEventListener('click',handleGlobalClick);
+// ── PASTE IMAGE FROM CLIPBOARD ──
+document.addEventListener('paste',e=>{
+  if(!state.currentUser||!state.currentChannelId)return;
+  const items=[...(e.clipboardData?.items||[])];
+  const imageItem=items.find(i=>i.type.startsWith('image/'));
+  if(!imageItem)return;
+  e.preventDefault();
+  const file=imageItem.getAsFile();if(!file)return;
+  compressImage(file,800,800,400,b64=>{
+    const u=state.currentUser;
+    const msg={id:'msg'+genId(12),uid:u.uid,name:u.name,color:u.avatarColor,avatarUrl:u.avatarUrl||'',content:'',imageData:b64,ts:Date.now(),reactions:[],pinned:false,channelId:state.currentChannelId};
+    sendMsg(msg);showToast('🖼️ Imagen pegada');
+  });
+});
+
+// ── AUTO STATUS ──
+let _lastActivity=Date.now();
+['mousemove','keydown','click','touchstart'].forEach(ev=>document.addEventListener(ev,()=>_lastActivity=Date.now(),{passive:true}));
+setInterval(()=>{
+  if(!state.currentUser)return;
+  const s=state.currentUser.status;
+  if(s==='dnd'||s==='offline')return; // respect manual
+  const idle=Date.now()-_lastActivity>5*60*1000;
+  const newS=idle?'idle':'online';
+  if(newS!==s){
+    state.currentUser.status=newS;
+    const dot=document.getElementById('user-status-dot');
+    if(dot)dot.style.background=STATUS_COLORS[newS]||STATUS_COLORS.online;
+    fbSet('presence/'+state.currentUser.uid+'/status',newS);
+    fbSet('presence/'+state.currentUser.uid+'/ts',Date.now());
+  }
+},60000);
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#emoji-picker')&&!e.target.closest('.input-btn'))closePicker();
+  if(!e.target.closest('#context-menu')&&!e.target.closest('.server-icon'))closeCtx?.();
+  if(!e.target.closest('#profile-popup')&&!e.target.closest('[data-uid]')&&!e.target.closest('.member-item'))closeProfilePopup?.();
+  if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id);
+  const uidEl=e.target.closest('[data-uid]');
+  if(uidEl){const uid=uidEl.dataset.uid;if(uid&&!uid.startsWith('bot_')&&uid!=='system')showProfilePopupByUid(e,uid,null);}
+});
 </script>
 </body>
 </html>
