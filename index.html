@@ -405,7 +405,33 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   .msg-avatar{width:30px;height:30px;border-radius:8px;}
 }
 
-/* ══ ROLE EDITOR ══ */
+/* ══ SERVER SETTINGS PANEL ══ */
+#server-settings-modal{padding:0;}
+.ss-nav-cat{font-size:.65rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);padding:16px 10px 4px;}
+.ss-nav-item{width:100%;background:none;border:none;color:var(--text-2);font-family:var(--font);font-size:.9rem;font-weight:500;padding:7px 10px;border-radius:var(--r-xs);text-align:left;cursor:pointer;transition:all .1s;display:block;}
+.ss-nav-item:hover{background:var(--bg-3);color:var(--text-0);}
+.ss-nav-item.active{background:var(--bg-4);color:var(--text-0);font-weight:600;}
+.ss-nav-item.danger{color:var(--red);}
+.ss-nav-item.danger:hover{background:rgba(244,63,94,.1);}
+.ss-section{display:none;padding:32px 40px;max-width:680px;}
+.ss-section.active{display:block;}
+.ss-section-header{margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.ss-section-title{font-size:1.25rem;font-weight:800;color:var(--text-0);letter-spacing:-.02em;margin-bottom:4px;}
+.ss-section-desc{font-size:.85rem;color:var(--text-2);line-height:1.5;}
+.ss-field-label{font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);}
+/* Emoji table rows */
+.ce-table-row{display:grid;grid-template-columns:60px 1fr 1fr auto;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);transition:background .1s;}
+.ce-table-row:last-child{border-bottom:none;}
+.ce-table-row:hover{background:var(--bg-4);}
+/* Members table */
+.ss-member-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.ss-member-row:last-child{border-bottom:none;}
+/* Tags */
+.ss-tag{display:inline-flex;align-items:center;gap:6px;background:var(--bg-4);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.8rem;color:var(--text-1);}
+.ss-tag button{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:.75rem;line-height:1;}
+.ss-tag button:hover{color:var(--red);}
+</style>
+
 .re-role-item{padding:7px 10px;border-radius:var(--r-xs);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;transition:background .1s;border:1.5px solid transparent;}
 .re-role-item:hover{background:var(--bg-4);}
 .re-role-item.active{background:var(--bg-4);border-color:var(--border);}
@@ -556,6 +582,10 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <span class="ch-name" id="chat-channel-name">Selecciona un canal</span>
       <div class="header-actions">
         <button class="icon-btn" onclick="openSearchModal()" title="Buscar">🔍</button>
+        <button class="icon-btn" onclick="openModal('thread-modal')" title="Nuevo hilo">💬</button>
+        <button class="icon-btn" onclick="openModal('poll-modal')" title="Encuesta">📊</button>
+        <button class="icon-btn" onclick="openModal('event-modal')" title="Evento">📅</button>
+        <button class="icon-btn" onclick="openLeaderboard()" title="Ranking XP">🏆</button>
         <button class="icon-btn" onclick="startVoiceCall()" title="Llamada de voz">📞</button>
         <button class="icon-btn" onclick="openVideoCall()" title="Videollamada">📹</button>
         <button class="icon-btn" onclick="toggleMembers()" title="Miembros">👥</button>
@@ -820,76 +850,225 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   </div>
 </div>
 
-<div class="modal-overlay" id="server-settings-modal">
-  <div class="modal">
-    <button class="close-btn" onclick="closeModal('server-settings-modal')">✕</button>
-    <h2 id="ss-title">Configuración</h2>
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('ss',0,this)">General</button>
-      <button class="tab-btn" onclick="switchTab('ss',1,this)">Roles</button>
-      <button class="tab-btn" onclick="switchTab('ss',2,this)">Emojis</button>
-      <button class="tab-btn" onclick="switchTab('ss',3,this)">Invitar</button>
+<div class="modal-overlay" id="server-settings-modal" style="align-items:stretch;justify-content:stretch;padding:0;">
+  <div style="display:flex;width:100%;height:100%;max-width:900px;margin:0 auto;position:relative;">
+
+    <!-- SIDEBAR NAV -->
+    <div id="ss-sidebar" style="width:220px;flex-shrink:0;background:var(--bg-1);padding:40px 8px 20px;overflow-y:auto;border-right:1px solid var(--border);">
+      <div id="ss-server-name-sidebar" style="font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);padding:4px 10px 10px;"></div>
+
+      <!-- SERVIDOR -->
+      <div class="ss-nav-cat">SERVIDOR</div>
+      <button class="ss-nav-item active" data-section="general" onclick="openSsSection('general',this)">Perfil del servidor</button>
+      <button class="ss-nav-item" data-section="channels" onclick="openSsSection('channels',this)">Canales</button>
+      <button class="ss-nav-item" data-section="invites" onclick="openSsSection('invites',this)">Invitaciones</button>
+
+      <!-- EXPRESIÓN -->
+      <div class="ss-nav-cat">EXPRESIÓN</div>
+      <button class="ss-nav-item" data-section="emojis" onclick="openSsSection('emojis',this)">Emojis</button>
+      <button class="ss-nav-item" data-section="stickers" onclick="openSsSection('stickers',this)">Stickers</button>
+
+      <!-- PERSONAS -->
+      <div class="ss-nav-cat">PERSONAS</div>
+      <button class="ss-nav-item" data-section="members" onclick="openSsSection('members',this)">Miembros</button>
+      <button class="ss-nav-item" data-section="roles" onclick="openSsSection('roles',this)">Roles</button>
+
+      <!-- MODERACIÓN -->
+      <div class="ss-nav-cat">MODERACIÓN</div>
+      <button class="ss-nav-item" data-section="audit" onclick="openSsSection('audit',this)">Registro de auditoría</button>
+      <button class="ss-nav-item" data-section="bans" onclick="openSsSection('bans',this)">Baneos</button>
+
+      <div style="height:1px;background:var(--border);margin:10px 8px;"></div>
+      <button class="ss-nav-item danger" onclick="deleteCurrentServer()">🗑️ Eliminar servidor</button>
     </div>
-    <div class="tab-content active" id="ss-tab-0">
-      <!-- Icon upload -->
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
-        <div id="ss-server-icon-preview" onclick="document.getElementById('ss-server-icon-file').click()"
-          style="width:64px;height:64px;border-radius:16px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;border:2px dashed var(--border);overflow:hidden;flex-shrink:0;"
-          title="Cambiar ícono">📷</div>
-        <input type="file" id="ss-server-icon-file" accept="image/*" style="display:none" onchange="handleServerIconUpload(this,'ss-server-icon-preview','ss-server-icon-b64')">
-        <input type="hidden" id="ss-server-icon-b64">
-        <div style="flex:1;">
-          <div style="font-size:.78rem;color:var(--text-2);margin-bottom:6px;">Imagen o emoji como ícono</div>
-          <input type="text" id="ss-server-icon" maxlength="2" placeholder="🎮" style="width:70px;" oninput="previewServerIconEmoji(this.value,'ss-server-icon-preview')">
+
+    <!-- MAIN CONTENT -->
+    <div style="flex:1;overflow-y:auto;background:var(--bg-2);position:relative;">
+      <button onclick="closeModal('server-settings-modal')" style="position:fixed;top:20px;right:20px;background:var(--bg-4);border:none;color:var(--text-2);width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background='var(--bg-5)'" onmouseout="this.style.background='var(--bg-4)'">✕</button>
+
+      <!-- GENERAL / PERFIL -->
+      <div class="ss-section active" id="ss-sec-general">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Perfil del servidor</h2>
+          <p class="ss-section-desc">Personaliza cómo aparece tu servidor.</p>
+        </div>
+        <!-- Preview card -->
+        <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px;">
+          <div style="flex:1;min-width:240px;">
+            <div class="ss-field-label">Ícono del servidor</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-top:8px;">
+              <div id="ss-server-icon-preview" onclick="document.getElementById('ss-server-icon-file').click()"
+                style="width:80px;height:80px;border-radius:20px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;border:2px dashed var(--border);overflow:hidden;flex-shrink:0;transition:all .15s;"
+                onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"
+                title="Cambiar ícono">📷</div>
+              <div>
+                <button class="btn btn-primary btn-sm" onclick="document.getElementById('ss-server-icon-file').click()">Cambiar ícono</button>
+                <button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="clearServerIcon()">Eliminar ícono</button>
+                <div style="font-size:.72rem;color:var(--text-3);margin-top:6px;">O usa un emoji:</div>
+                <input type="text" id="ss-server-icon" maxlength="2" placeholder="🎮" style="width:60px;margin-top:4px;" oninput="previewServerIconEmoji(this.value,'ss-server-icon-preview')">
+              </div>
+            </div>
+            <input type="file" id="ss-server-icon-file" accept="image/*" style="display:none" onchange="handleServerIconUpload(this,'ss-server-icon-preview','ss-server-icon-b64')">
+            <input type="hidden" id="ss-server-icon-b64">
+          </div>
+          <!-- Server preview card -->
+          <div style="width:200px;flex-shrink:0;">
+            <div class="ss-field-label">Vista previa</div>
+            <div id="ss-preview-card" style="background:var(--bg-3);border-radius:14px;overflow:hidden;margin-top:8px;border:1px solid var(--border);">
+              <div id="ss-preview-banner" style="height:60px;background:linear-gradient(135deg,var(--accent),var(--accent-g));"></div>
+              <div style="padding:0 12px 12px;">
+                <div id="ss-preview-icon" style="width:44px;height:44px;border-radius:12px;border:3px solid var(--bg-3);margin-top:-22px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:#fff;overflow:hidden;"></div>
+                <div id="ss-preview-name" style="font-size:.875rem;font-weight:700;color:var(--text-0);margin-top:6px;"></div>
+                <div id="ss-preview-desc" style="font-size:.72rem;color:var(--text-3);margin-top:2px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ss-field-label">Nombre</div>
+        <input type="text" id="ss-server-name" style="margin-top:6px;" oninput="document.getElementById('ss-preview-name').textContent=this.value">
+
+        <div class="ss-field-label" style="margin-top:14px;">Descripción</div>
+        <textarea id="ss-server-desc" rows="3" placeholder="Sobre este servidor..." style="margin-top:6px;resize:vertical;min-height:60px;width:100%;background:var(--bg-3);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;color:var(--text-0);font-family:var(--font);font-size:.9rem;outline:none;" oninput="document.getElementById('ss-preview-desc').textContent=this.value"></textarea>
+
+        <div class="ss-field-label" style="margin-top:14px;">Cartel (banner)</div>
+        <div onclick="document.getElementById('ss-banner-file').click()"
+          id="ss-banner-preview"
+          style="height:100px;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--accent),var(--accent-g));cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:.85rem;border:2px dashed transparent;transition:all .15s;overflow:hidden;background-size:cover;background-position:center;"
+          onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='transparent'">
+          Clic para cambiar banner
+        </div>
+        <input type="file" id="ss-banner-file" accept="image/*" style="display:none" onchange="handleImgUpload(this,'ss-banner-preview','ss-banner-b64',900,300)">
+        <input type="hidden" id="ss-banner-b64">
+
+        <div class="ss-field-label" style="margin-top:14px;">Rasgos / Tags <span style="color:var(--text-3);font-weight:400;">(hasta 5)</span></div>
+        <div id="ss-tags-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input type="text" id="ss-tag-input" placeholder="Ej: Gaming, Arte, Música..." style="flex:1;" onkeydown="if(event.key==='Enter')addServerTag()">
+          <button class="btn btn-ghost btn-sm" onclick="addServerTag()">＋ Añadir</button>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+          <button class="btn btn-ghost" onclick="closeModal('server-settings-modal')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveServerSettings()">Guardar cambios</button>
         </div>
       </div>
-      <label>Nombre del servidor</label><input type="text" id="ss-server-name">
-      <label>Descripción</label><input type="text" id="ss-server-desc" placeholder="Sobre este servidor...">
-      <div class="modal-actions">
-        <button class="btn btn-danger" onclick="deleteCurrentServer()">🗑️ Eliminar</button>
-        <button class="btn btn-primary" onclick="saveServerSettings()">Guardar</button>
+
+      <!-- CHANNELS -->
+      <div class="ss-section" id="ss-sec-channels">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Canales</h2>
+          <p class="ss-section-desc">Gestiona los canales de texto, voz y anuncios.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openAddChannelModal()">＋ Crear canal</button>
+        <div id="ss-channels-list" style="margin-top:16px;"></div>
       </div>
-    </div>
-    <div class="tab-content" id="ss-tab-1">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:.75rem;color:var(--text-3);">Los roles se asignan en orden de prioridad (arriba = más alto)</div>
-        <button class="btn btn-primary btn-sm" onclick="addRole()">＋ Nuevo rol</button>
+
+      <!-- INVITES -->
+      <div class="ss-section" id="ss-sec-invites">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Invitaciones</h2>
+          <p class="ss-section-desc">Comparte el código para que otros se unan.</p>
+        </div>
+        <div class="ss-field-label">Código de invitación</div>
+        <div class="invite-code-box" style="margin-top:8px;">
+          <span id="invite-code-text" style="font-size:1rem;letter-spacing:.05em;"></span>
+          <button class="btn btn-ghost btn-sm" onclick="copyInviteCode()">Copiar</button>
+        </div>
+        <button class="btn btn-ghost" style="margin-top:8px;" onclick="regenerateInvite()">🔄 Regenerar código</button>
+        <div style="height:1px;background:var(--border);margin:20px 0;"></div>
+        <div class="ss-field-label">Unirse con código</div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input type="text" id="join-invite-input" placeholder="Pega el código aquí" style="flex:1;">
+          <button class="btn btn-primary" onclick="joinByInvite()">Unirse</button>
+        </div>
       </div>
-      <div id="ss-roles-list"></div>
-    </div>
-    <div class="tab-content" id="ss-tab-2">
-      <!-- Upload area -->
-      <div id="ce-dropzone" onclick="document.getElementById('ce-file').click()"
-        style="border:2px dashed var(--border);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:16px;"
-        onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-glow)'"
-        onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
-        <div id="ce-preview" style="width:64px;height:64px;border-radius:12px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden;font-size:2rem;">＋</div>
-        <div style="font-size:.85rem;font-weight:600;color:var(--text-1);">Haz clic para subir</div>
-        <div style="font-size:.75rem;color:var(--text-3);margin-top:3px;">PNG, GIF, WebP — se comprime automáticamente</div>
+
+      <!-- EMOJIS -->
+      <div class="ss-section" id="ss-sec-emojis">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Emojis</h2>
+          <p class="ss-section-desc">Añade hasta 50 emojis personalizados (PNG, GIF, WebP).</p>
+        </div>
+        <div id="ce-dropzone" onclick="document.getElementById('ce-file').click()"
+          style="border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:16px;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-glow)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
+          <div id="ce-preview" style="width:64px;height:64px;border-radius:12px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden;font-size:2rem;">＋</div>
+          <div style="font-size:.9rem;font-weight:600;color:var(--text-1);">Haz clic para subir un emoji</div>
+          <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">PNG, GIF, WebP — se comprime automáticamente</div>
+        </div>
+        <input type="file" id="ce-file" accept="image/*" style="display:none" onchange="handleEmojiUpload(this)">
+        <input type="hidden" id="ce-b64">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;">
+          <input type="text" id="ce-name" placeholder="nombre_del_emoji" style="flex:1;margin:0;">
+          <button class="btn btn-primary" onclick="addCustomEmoji()">✅ Agregar</button>
+        </div>
+        <!-- Table like Discord -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="ss-field-label" style="margin:0;">Emojis del servidor — <span id="ce-count">0</span>/50</div>
+        </div>
+        <div style="background:var(--bg-3);border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+          <div style="display:grid;grid-template-columns:60px 1fr 1fr auto;padding:10px 16px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);border-bottom:1px solid var(--border);">
+            <span>Imagen</span><span>Nombre</span><span>Subido por</span><span></span>
+          </div>
+          <div id="ce-list"></div>
+        </div>
       </div>
-      <input type="file" id="ce-file" accept="image/*" style="display:none" onchange="handleEmojiUpload(this)">
-      <input type="hidden" id="ce-b64">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">
-        <input type="text" id="ce-name" placeholder="nombre_del_emoji (sin espacios)" style="flex:1;margin:0;">
-        <button class="btn btn-primary" onclick="addCustomEmoji()" style="flex-shrink:0;white-space:nowrap;">✅ Agregar</button>
+
+      <!-- STICKERS -->
+      <div class="ss-section" id="ss-sec-stickers">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Stickers</h2>
+          <p class="ss-section-desc">Los stickers son los emojis grandes del servidor. Próximamente.</p>
+        </div>
+        <div style="text-align:center;padding:40px 0;color:var(--text-3);">
+          <div style="font-size:3rem;margin-bottom:12px;">🎭</div>
+          <div style="font-size:.9rem;font-weight:600;color:var(--text-2);">Próximamente</div>
+        </div>
       </div>
-      <!-- Emoji list -->
-      <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Emojis del servidor (<span id="ce-count">0</span>/50)</div>
-      <div id="ce-list" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;"></div>
-    </div>
-    <div class="tab-content" id="ss-tab-3">
-      <p style="font-size:.85rem;color:var(--text-2);">Comparte este código para invitar a otros.</p>
-      <div class="invite-code-box">
-        <span id="invite-code-text"></span>
-        <button class="btn btn-ghost" style="padding:4px 10px;font-size:.8rem;" onclick="copyInviteCode()">Copiar</button>
+
+      <!-- MEMBERS -->
+      <div class="ss-section" id="ss-sec-members">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Miembros</h2>
+          <p class="ss-section-desc">Gestiona los miembros de tu servidor.</p>
+        </div>
+        <div id="ss-members-list"></div>
       </div>
-      <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="regenerateInvite()">🔄 Regenerar</button>
-      <label style="margin-top:16px;">Unirse con código</label>
-      <input type="text" id="join-invite-input" placeholder="Pega el código aquí">
-      <button class="btn btn-primary" style="margin-top:8px;width:100%;" onclick="joinByInvite()">Unirse</button>
-    </div>
+
+      <!-- ROLES -->
+      <div class="ss-section" id="ss-sec-roles">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Roles</h2>
+          <p class="ss-section-desc">Los roles definen qué pueden hacer los miembros. El orden importa — roles superiores tienen más prioridad.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addRole()" style="margin-bottom:16px;">＋ Crear rol</button>
+        <div id="ss-roles-list"></div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="ss-section" id="ss-sec-audit">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Registro de auditoría</h2>
+          <p class="ss-section-desc">Historial de acciones en el servidor.</p>
+        </div>
+        <div id="ss-audit-list"></div>
+      </div>
+
+      <!-- BANS -->
+      <div class="ss-section" id="ss-sec-bans">
+        <div class="ss-section-header">
+          <h2 class="ss-section-title">Baneos</h2>
+          <p class="ss-section-desc">Usuarios bloqueados de este servidor.</p>
+        </div>
+        <div id="ss-bans-list" style="color:var(--text-3);font-size:.875rem;padding:20px 0;">Ningún usuario baneado.</div>
+      </div>
+
+    </div><!-- end main content -->
   </div>
 </div>
+
 
 <div class="modal-overlay" id="image-url-modal">
   <div class="modal">
@@ -1347,6 +1526,14 @@ function renderChannelsPanel(){
       item.innerHTML=`<span class="ch-icon">${CHAN_ICONS[ch.type]||'#'}</span>${ch.name}${ch.private?'<span style="font-size:.7rem;color:var(--text-3);margin-left:2px;">🔒</span>':''}${unread?`<div class="unread-badge">${unread}</div>`:''}<div class="ch-actions">${isServerAdmin(srv)?`<button class="icon-btn" onclick="deleteChannel('${ch.id}','${srv.id}')">🗑️</button>`:''}</div>`;
       item.onclick=e=>{if(!e.target.closest('.ch-actions'))selectChannel(ch.id);};
       group.appendChild(item);
+      // Render threads under channel
+      (ch.threads||[]).forEach(thread=>{
+        const titem=document.createElement('div');
+        titem.className='thread-item'+(thread.id===state.currentChannelId?' active':'');
+        titem.innerHTML=`<span style="color:var(--text-3);font-size:.8rem;">↳</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${thread.name}</span>`;
+        titem.onclick=()=>selectChannel(thread.id);
+        group.appendChild(titem);
+      });
     });
     list.appendChild(group);
   });
@@ -1459,11 +1646,12 @@ function hoverBtns(msg,isMe){
   const srv=getServer(state.currentServerId);
   const canDelete=isMe||isServerAdmin(srv);
   const canPin=isServerAdmin(srv);
-  const pinIcon=msg.pinned?'📌':'📍';
+  const inServer=state.currentServerId&&state.currentServerId!=='__dm__';
   return`<button class="icon-btn" onclick="quickReact('${msg.id}')" title="Reaccionar">😄</button>
     <button class="icon-btn" onclick="setReply('${msg.id}')" title="Responder">↩️</button>
+    ${inServer?`<button class="icon-btn" onclick="openThreadModal('${msg.id}')" title="Crear hilo">💬</button>`:''}
     ${isMe?`<button class="icon-btn" onclick="startEditMsg('${msg.id}')" title="Editar">✏️</button>`:''}
-    ${canPin?`<button class="icon-btn" onclick="pinMessage('${msg.id}')" title="${msg.pinned?'Desfijar':'Fijar'}">${pinIcon}</button>`:''}
+    ${canPin?`<button class="icon-btn" onclick="pinMessage('${msg.id}')" title="${msg.pinned?'Desfijar':'Fijar'}">${msg.pinned?'📌':'📍'}</button>`:''}
     ${canDelete?`<button class="icon-btn" onclick="deleteMsg('${msg.id}')" title="Eliminar">🗑️</button>`:''}`;
 }
 function renderTyping(){
@@ -1689,38 +1877,157 @@ function createServer(){
   prev.style.background='var(--bg-4)';
   selectServer(id);showToast('✅ Servidor "'+name+'" creado');
 }
+function openSsSection(section, btn){
+  document.querySelectorAll('.ss-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ss-nav-item').forEach(b=>b.classList.remove('active'));
+  const sec=document.getElementById('ss-sec-'+section);
+  if(sec)sec.classList.add('active');
+  if(btn)btn.classList.add('active');
+  // Lazy render section content
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  if(section==='roles')renderRolesList(srv);
+  if(section==='emojis')renderCustomEmojiList(srv);
+  if(section==='members')renderSsMembers(srv);
+  if(section==='channels')renderSsChannels(srv);
+  if(section==='audit')renderAuditLog(srv);
+}
 function openServerSettings(){
   const srv=getServer(state.currentServerId);if(!srv)return;
-  document.getElementById('ss-title').textContent=srv.name;
+  // Fill sidebar server name
+  document.getElementById('ss-server-name-sidebar').textContent=srv.name;
+  // Fill general fields
   document.getElementById('ss-server-name').value=srv.name;
-  document.getElementById('ss-server-icon').value=srv.icon||'';
   document.getElementById('ss-server-desc').value=srv.desc||'';
-  // Show existing icon
-  const iconPreview=document.getElementById('ss-server-icon-preview');
-  if(srv.iconImg){
-    iconPreview.innerHTML=`<img src="${srv.iconImg}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">`;
-  } else if(srv.icon && srv.icon !== (srv.name||'')[0]){
-    iconPreview.innerHTML=`<span style="font-size:2rem;line-height:1;">${srv.icon}</span>`;
-    iconPreview.style.background='var(--bg-4)';
-  } else {
-    const initials=(srv.name||'?').substring(0,2).toUpperCase();
-    iconPreview.innerHTML=`<span style="font-size:1.2rem;font-weight:800;color:#fff;">${initials}</span>`;
-    iconPreview.style.background=srv.color||'var(--accent)';
-  }
+  document.getElementById('ss-server-icon').value=typeof srv.icon==='string'&&srv.icon!==srv.name[0]?srv.icon:'';
   document.getElementById('ss-server-icon-b64').value='';
-  renderRolesList(srv);renderCustomEmojiList(srv);
+  document.getElementById('ss-banner-b64').value='';
+  // Icon preview
+  const iconPrev=document.getElementById('ss-server-icon-preview');
+  if(srv.iconImg){iconPrev.innerHTML=`<img src="${srv.iconImg}" style="width:100%;height:100%;object-fit:cover;border-radius:18px;">`;}
+  else if(srv.icon&&srv.icon!==srv.name[0]){iconPrev.innerHTML=`<span style="font-size:2.5rem;">${srv.icon}</span>`;iconPrev.style.background='var(--bg-4)';}
+  else{const ini=(srv.name||'?').substring(0,2).toUpperCase();iconPrev.innerHTML=`<span style="font-size:1.4rem;font-weight:800;color:#fff;">${ini}</span>`;iconPrev.style.background=srv.color||'var(--accent)';}
+  // Banner preview
+  const bannerPrev=document.getElementById('ss-banner-preview');
+  if(srv.bannerUrl){bannerPrev.style.backgroundImage=`url(${srv.bannerUrl})`;bannerPrev.textContent='';}
+  else{bannerPrev.style.backgroundImage='';bannerPrev.style.background=`linear-gradient(135deg,${srv.color||'var(--accent)'},var(--accent-g))`;}
+  // Preview card
+  document.getElementById('ss-preview-name').textContent=srv.name;
+  document.getElementById('ss-preview-desc').textContent=srv.desc||'';
+  const prevIcon=document.getElementById('ss-preview-icon');
+  if(srv.iconImg){prevIcon.innerHTML=`<img src="${srv.iconImg}" style="width:100%;height:100%;object-fit:cover;">`;}
+  else{prevIcon.textContent=srv.icon||(srv.name[0]||'?');prevIcon.style.background=srv.color||'var(--accent)';}
+  document.getElementById('ss-preview-banner').style.background=`linear-gradient(135deg,${srv.color||'var(--accent)'},var(--accent-g))`;
+  // Tags
+  renderSsTags(srv.tags||[]);
+  // Invite code
   document.getElementById('invite-code-text').textContent=srv.inviteCode||genId(8);
+  // Reset to general tab
+  openSsSection('general', document.querySelector('.ss-nav-item[data-section="general"]'));
   openModal('server-settings-modal');
+}
+function clearServerIcon(){
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  srv.iconImg='';srv.icon='';saveServers();
+  const ini=(srv.name||'?').substring(0,2).toUpperCase();
+  const el=document.getElementById('ss-server-icon-preview');
+  el.innerHTML=`<span style="font-size:1.4rem;font-weight:800;color:#fff;">${ini}</span>`;
+  el.style.background=srv.color||'var(--accent)';
+  document.getElementById('ss-server-icon-b64').value='';
+  showToast('✅ Ícono eliminado');renderServerBar();
+}
+function addServerTag(){
+  const inp=document.getElementById('ss-tag-input');
+  const tag=inp.value.trim();if(!tag)return;
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  if(!srv.tags)srv.tags=[];
+  if(srv.tags.length>=5){showToast('⚠️ Máximo 5 tags');return;}
+  if(!srv.tags.includes(tag))srv.tags.push(tag);
+  inp.value='';
+  renderSsTags(srv.tags);saveServers();
+}
+function removeServerTag(tag){
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  srv.tags=(srv.tags||[]).filter(t=>t!==tag);
+  renderSsTags(srv.tags);saveServers();
+}
+function renderSsTags(tags){
+  const el=document.getElementById('ss-tags-list');if(!el)return;
+  el.innerHTML=tags.map(t=>`<div class="ss-tag">${t}<button onclick="removeServerTag('${t}')">✕</button></div>`).join('');
+}
+function renderSsMembers(srv){
+  const el=document.getElementById('ss-members-list');if(!el)return;
+  el.innerHTML='';
+  const members=srv.members||[];
+  members.forEach(m=>{
+    const uid=m.uid||m.id;
+    const isOwner=srv.ownerId===uid;
+    const color=m.avatarColor||m.color||'var(--accent)';
+    const row=document.createElement('div');
+    row.className='ss-member-row';
+    row.innerHTML=`
+      <div style="width:36px;height:36px;border-radius:10px;background:${color};display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0;">
+        ${m.avatarUrl?`<img src="${m.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`:(m.name||'?')[0].toUpperCase()}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.875rem;font-weight:600;color:var(--text-0);">${m.name||'?'}${isOwner?'<span style="font-size:.6rem;background:rgba(245,158,11,.2);color:var(--yellow);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:700;">DUEÑO</span>':''}</div>
+        <div style="font-size:.72rem;color:var(--text-3);">${(m.roles||[]).slice(0,3).join(', ')||'Sin roles'}</div>
+      </div>
+      ${!isOwner&&isServerAdmin(srv)?`<button class="btn btn-ghost btn-sm" onclick="manageRoles('${uid}')">👑 Roles</button>`:''}`
+    el.appendChild(row);
+  });
+  if(!members.length)el.innerHTML='<div style="color:var(--text-3);padding:20px 0;font-size:.875rem;">Sin miembros.</div>';
+}
+function renderSsChannels(srv){
+  const el=document.getElementById('ss-channels-list');if(!el)return;
+  el.innerHTML='';
+  (srv.channels||[]).forEach(cat=>{
+    const catDiv=document.createElement('div');
+    catDiv.style.cssText='margin-bottom:16px;';
+    catDiv.innerHTML=`<div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">${cat.name}</div>`;
+    (cat.children||[]).forEach(ch=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-3);border-radius:var(--r-xs);margin-bottom:4px;';
+      row.innerHTML=`<span style="color:var(--text-3);">${CHAN_ICONS[ch.type]||'#'}</span><span style="flex:1;font-size:.875rem;color:var(--text-1);">${ch.name}</span>${isServerAdmin(srv)?`<button class="btn btn-ghost btn-sm" onclick="deleteChannel('${ch.id}','${srv.id}');renderSsChannels(getServer(state.currentServerId))">🗑️</button>`:''}`;
+      catDiv.appendChild(row);
+    });
+    el.appendChild(catDiv);
+  });
+}
+function renderAuditLog(srv){
+  const el=document.getElementById('ss-audit-list');if(!el)return;
+  const log=srv.auditLog||[];
+  if(!log.length){el.innerHTML='<div style="color:var(--text-3);font-size:.875rem;padding:20px 0;">Sin acciones registradas.</div>';return;}
+  el.innerHTML=log.slice(-50).reverse().map(e=>`
+    <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">${e.icon||'📋'}</div>
+      <div><div style="font-size:.875rem;color:var(--text-0);">${e.action}</div><div style="font-size:.72rem;color:var(--text-3);">${e.user} · ${fmtDateTime(e.ts)}</div></div>
+    </div>`).join('');
+}
+function logAudit(action, icon){
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  if(!srv.auditLog)srv.auditLog=[];
+  srv.auditLog.push({action,icon,user:state.currentUser?.name||'?',ts:Date.now()});
+  if(srv.auditLog.length>100)srv.auditLog.shift();
+  saveServers();
 }
 function saveServerSettings(){
   const srv=getServer(state.currentServerId);if(!srv)return;
-  srv.name=document.getElementById('ss-server-name').value.trim()||srv.name;
+  const name=document.getElementById('ss-server-name').value.trim();
+  if(!name){showToast('⚠️ Nombre requerido');return;}
+  const oldName=srv.name;
+  srv.name=name;
+  srv.desc=document.getElementById('ss-server-desc').value.trim();
   const newIcon=document.getElementById('ss-server-icon').value.trim();
   if(newIcon)srv.icon=newIcon;
   const newIconB64=document.getElementById('ss-server-icon-b64').value;
   if(newIconB64)srv.iconImg=newIconB64;
-  srv.desc=document.getElementById('ss-server-desc').value.trim();
-  saveServers();closeModal('server-settings-modal');renderAll();showToast('✅ Guardado');
+  const newBannerB64=document.getElementById('ss-banner-b64').value;
+  if(newBannerB64)srv.bannerUrl=newBannerB64;
+  if(oldName!==name)logAudit(`Nombre cambiado: "${oldName}" → "${name}"`,'✏️');
+  // Update preview card
+  document.getElementById('ss-server-name-sidebar').textContent=name;
+  document.getElementById('ss-preview-name').textContent=name;
+  saveServers();renderAll();showToast('✅ Servidor actualizado');
 }
 function deleteCurrentServer(){
   if(!confirm('¿Eliminar servidor permanentemente?'))return;
