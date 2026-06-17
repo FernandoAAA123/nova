@@ -13,13 +13,13 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey:            "AIzaSyApMNWmt8czi1WVbddSBfkA1oskaZ4G1i4",
-    authDomain:        "nova-chat-app-b32e3.firebaseapp.com",
-    databaseURL:       "https://nova-chat-app-b32e3-default-rtdb.firebaseio.com",
-    projectId:         "nova-chat-app-b32e3",
-    storageBucket:     "nova-chat-app-b32e3.firebasestorage.app",
-    messagingSenderId: "919535150097",
-    appId:             "1:919535150097:web:7c54d32b488107d54e7db0",
+    apiKey:            "AIzaSyAjI362VY6rzQ2mIqdMBt7qBXV1peW3LEM",
+    authDomain:        "nova-chat-and-communities.firebaseapp.com",
+    databaseURL:       "https://nova-chat-and-communities-default-rtdb.firebaseio.com",
+    projectId:         "nova-chat-and-communities",
+    storageBucket:     "nova-chat-and-communities.firebasestorage.app",
+    messagingSenderId: "130902442962",
+    appId:             "1:130902442962:web:273ffa4949aa287879fe0b",
     measurementId:     "G-P87263SBYT"
   };
 
@@ -1626,6 +1626,16 @@ async function fbGet(path){return window._fbGet(fbRef(path));}
 function fbOn(path,cb){return window._fbOnValue(fbRef(path),cb);}
 function fbOnChild(path,cb){return window._fbOnChildAdded(fbRef(path),cb);}
 
+// ── PREFS PERSISTENCE (Firebase, survives Firebase project migration) ──
+let _prefSaveTimer=null;
+function savePref(partial){
+  if(!state.currentUser?.uid)return;
+  clearTimeout(_prefSaveTimer);
+  _prefSaveTimer=setTimeout(()=>{
+    fbUpdate('users/'+state.currentUser.uid+'/prefs',partial).catch(()=>{});
+  },400);
+}
+
 // ── AUTH ──
 function switchAuthTab(tab,btn){
   document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
@@ -1752,14 +1762,28 @@ async function onUserLoggedIn(firebaseUser){
   document.getElementById('app').classList.add('visible');
   document.getElementById('live-badge').style.display='block';
 
-  // Restore last server/channel from localStorage
-  try {
-    const lastSrv=localStorage.getItem('nova_last_server');
-    const lastCh=localStorage.getItem('nova_last_channel');
-    const srvExists=lastSrv&&(lastSrv==='__dm__'||state.servers.find(s=>s.id===lastSrv));
-    state.currentServerId=srvExists?lastSrv:'__dm__';
-    if(lastCh&&lastCh!=='null')state.currentChannelId=lastCh;
-  } catch(e){ state.currentServerId='__dm__'; }
+  // Restore prefs (theme, last server/channel, recent emojis) from Firebase — survives project migration
+  let prefs={};
+  try{
+    const prefSnap=await withTimeout(fbGet('users/'+state.currentUser.uid+'/prefs'),4000,null);
+    prefs=(prefSnap&&prefSnap.exists?.())?prefSnap.val():{};
+  }catch(e){ prefs={}; }
+
+  const lastSrv=prefs.lastServer;
+  const lastCh=prefs.lastChannel;
+  const srvExists=lastSrv&&(lastSrv==='__dm__'||state.servers.find(s=>s.id===lastSrv));
+  state.currentServerId=srvExists?lastSrv:'__dm__';
+  if(lastCh)state.currentChannelId=lastCh;
+
+  if(prefs.theme){
+    const card=document.querySelector(`.theme-card[data-theme="${prefs.theme}"]`);
+    const dot=document.querySelector(`.theme-dot[data-theme="${prefs.theme}"]`);
+    setTheme(prefs.theme, card||dot);
+  } else {
+    loadSavedTheme(); // fallback to localStorage for first-time migration
+  }
+
+  if(Array.isArray(prefs.recentEmojis)) _recentEmojis=prefs.recentEmojis;
 
   renderAll();updateUserBar();hideLoadingOverlay();
 
@@ -2372,12 +2396,12 @@ function openDM(uid){
 function selectChannel(id){
   state.currentChannelId=id;state.unreadCounts[id]=0;
   subscribeChannel(id);renderChannelsPanel();renderChatArea();
-  try{localStorage.setItem('nova_last_channel',id);}catch(e){}
+  savePref({lastChannel:id});
 }
 function selectServer(id){
   state.currentServerId=id;state.currentChannelId=null;state.currentDmUid=null;
   if(id!=='__dm__'){const srv=getServer(id);if(srv){const f=srv.channels?.flatMap(c=>c.children||[]).find(c=>c.type==='text');if(f){state.currentChannelId=f.id;subscribeChannel(f.id);}}}
-  try{localStorage.setItem('nova_last_server',id);localStorage.setItem('nova_last_channel',state.currentChannelId||'');}catch(e){}
+  savePref({lastServer:id,lastChannel:state.currentChannelId||''});
   renderAll();
 }
 function openAddChannelModal(){if(!state.currentServerId||state.currentServerId==='__dm__')return;populateCategorySelect();document.getElementById('ch-private-toggle').classList.remove('on');openModal('add-channel-modal');}
@@ -3362,7 +3386,7 @@ function saveUserSettings(){
 // ── EMOJI PICKER ──
 // ══ EMOJI RECIENTES ══
 let _recentEmojis=[];try{_recentEmojis=JSON.parse(localStorage.getItem('nova_recent_emojis')||'[]');}catch(e){}
-function addRecentEmoji(e){_recentEmojis=[e,..._recentEmojis.filter(x=>x!==e)].slice(0,24);try{localStorage.setItem('nova_recent_emojis',JSON.stringify(_recentEmojis));}catch(e){}}
+function addRecentEmoji(e){_recentEmojis=[e,..._recentEmojis.filter(x=>x!==e)].slice(0,24);try{localStorage.setItem('nova_recent_emojis',JSON.stringify(_recentEmojis));}catch(e){}savePref({recentEmojis:_recentEmojis});}
 
 const EMOJI_CATS={
   '🔥 Popular':['🔥','💯','✅','⚡','🎉','🚀','💎','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>','🌟','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 20h14"/></svg>','💫','🎯','🎮','🎵','🍕','🍔','☕','🎂','🌈','❄️','🌊','🌺','🍀','🦄','🐸','💀','😭','🤌','💅','🫡','🥺','😤','🤡','🎃','🫶','🥹'],
@@ -3636,6 +3660,7 @@ function setTheme(theme, el) {
   const dot = document.querySelector(`.theme-dot[data-theme="${theme}"]`);
   if (dot) dot.classList.add('active');
   try { localStorage.setItem('nova_theme', theme); } catch(e) {}
+  savePref({theme}); // also persist to Firebase so it survives a project migration
 }
 function loadSavedTheme() {
   try {
