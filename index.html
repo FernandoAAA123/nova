@@ -692,9 +692,13 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   <div class="online-badge"><div class="online-pulse"></div><span id="online-count">0</span> en línea · <span class="nova-tag">✦ Nova</span></div>
 </div>
 <div id="profile-popup">
+  <button onclick="closeProfilePopup()" style="position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.45);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">✕</button>
   <div class="profile-banner" id="pp-banner"></div>
   <div class="profile-body">
-    <div class="profile-ava" id="pp-ava"></div>
+    <div style="position:relative;width:fit-content;">
+      <div class="profile-ava" id="pp-ava"></div>
+      <div id="pp-online-dot" style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--bg-2);display:none;"></div>
+    </div>
     <div class="profile-name" id="pp-name"></div>
     <div class="profile-tag" id="pp-tag"></div>
     <div class="profile-status" id="pp-status"></div>
@@ -703,7 +707,23 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   </div>
 </div>
 <div id="context-menu"></div>
-<div class="notification-toast" id="toast"></div>
+
+<!-- ADD SERVER POPUP MENU — top level so it's never clipped by #server-bar overflow -->
+<div id="add-server-menu" style="display:none;position:fixed;background:var(--bg-2);border:1px solid var(--border);border-radius:14px;padding:6px;z-index:600;box-shadow:0 12px 40px rgba(0,0,0,.55);min-width:210px;">
+  <div class="ctx-item" onclick="closeAddServerMenu();openModal('create-server-modal')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Crear comunidad
+  </div>
+  <div class="ctx-item" onclick="closeAddServerMenu();openModal('join-server-modal')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    Unirse con código
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="invite-people-menu-item" onclick="closeAddServerMenu();openInvitePeopleModal()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+    Invitar personas
+  </div>
+</div>
 
 <!-- MAIN APP -->
 <div id="app">
@@ -717,22 +737,6 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     <div id="server-icons-list"></div>
     <div class="server-sep"></div>
     <div class="server-icon" id="add-server-btn" title="Nueva comunidad" onclick="toggleAddServerMenu(event)">＋</div>
-    <!-- Add server popup menu -->
-    <div id="add-server-menu" style="display:none;position:fixed;left:80px;background:var(--bg-2);border:1px solid var(--border);border-radius:14px;padding:6px;z-index:500;box-shadow:0 12px 40px rgba(0,0,0,.55);min-width:210px;">
-      <div class="ctx-item" onclick="closeAddServerMenu();openModal('create-server-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        Crear comunidad
-      </div>
-      <div class="ctx-item" onclick="closeAddServerMenu();openModal('join-server-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        Unirse con código
-      </div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" onclick="closeAddServerMenu();openInvitePeopleModal()" id="invite-people-menu-item">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-        Invitar personas
-      </div>
-    </div>
   </div>
   <div id="channels-panel">
     <div id="channels-header">
@@ -2244,7 +2248,7 @@ function buildMemberEl(m,isOnline){
   const bg=m.avatarUrl?'#000':(m.color||m.avatarColor||'#5865f2');
   const statusColor=STATUS_COLORS[isOnline?'online':'offline'];
   div.innerHTML=`<div class="member-avatar" style="background:${bg}">${avatarC}<div class="member-status" style="background:${statusColor}"></div></div><div class="member-info"><div class="member-name" style="color:${isOnline?(m.color||'var(--text-1)'):'var(--text-3)'}">${m.name||'?'}${uid===state.currentUser.uid?' <span style="font-size:.65rem;color:var(--accent);">(tú)</span>':''}</div></div>`;
-  div.onclick=e=>{if(uid!==state.currentUser.uid)showProfilePopupByUid(e,uid,m);e.stopPropagation();};
+  div.onclick=e=>{showProfilePopupByUid(e,uid,m);e.stopPropagation();};
   return div;
 }
 
@@ -3253,6 +3257,8 @@ function showProfilePopupByUid(event,uid,info){
   else{bannerEl.style.backgroundImage='';bannerEl.style.background=`linear-gradient(135deg,${color},${color}66)`;}
   const avaEl=document.getElementById('pp-ava');avaEl.style.background=avatarUrl?'#000':color;
   avaEl.innerHTML=avatarUrl?`<img src="${avatarUrl}" onerror="this.style.display='none'">`:(name[0]||'?').toUpperCase();
+  const dotEl=document.getElementById('pp-online-dot');
+  if(dotEl){const st=state.onlineUsers[uid]?.status;const isOn=!!state.onlineUsers[uid]&&st!=='offline';dotEl.style.display=isOn?'block':'none';dotEl.style.background=st==='idle'?'var(--yellow)':st==='dnd'?'var(--red)':'var(--green)';}
   document.getElementById('pp-name').textContent=u.displayName||name;
   document.getElementById('pp-tag').textContent=u.tag||'';
   // Status + bio
