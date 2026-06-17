@@ -13,13 +13,13 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey:            "AIzaSyAjI362VY6rzQ2mIqdMBt7qBXV1peW3LEM",
-    authDomain:        "nova-chat-and-communities.firebaseapp.com",
-    databaseURL:       "https://nova-chat-and-communities-default-rtdb.firebaseio.com",
-    projectId:         "nova-chat-and-communities",
-    storageBucket:     "nova-chat-and-communities.firebasestorage.app",
-    messagingSenderId: "130902442962",
-    appId:             "1:130902442962:web:273ffa4949aa287879fe0b",
+    apiKey:            "AIzaSyApMNWmt8czi1WVbddSBfkA1oskaZ4G1i4",
+    authDomain:        "nova-chat-app-b32e3.firebaseapp.com",
+    databaseURL:       "https://nova-chat-app-b32e3-default-rtdb.firebaseio.com",
+    projectId:         "nova-chat-app-b32e3",
+    storageBucket:     "nova-chat-app-b32e3.firebasestorage.app",
+    messagingSenderId: "919535150097",
+    appId:             "1:919535150097:web:7c54d32b488107d54e7db0",
     measurementId:     "G-P87263SBYT"
   };
 
@@ -1691,10 +1691,17 @@ async function initUserProfile(firebaseUser,displayName,photoURL){
   if(!snap.exists()&&eKey){
     const emailSnap=await fbGet('usersByEmail/'+eKey);
     if(emailSnap.exists()){
+      const oldData=emailSnap.val();
+      const oldUid=oldData.uid; // UID from the previous Firebase project
       // Restore profile under new UID
-      const recovered={...emailSnap.val(),uid};
+      const recovered={...oldData,uid};
       await fbSet('users/'+uid,recovered);
       snap=await fbGet('users/'+uid);
+
+      // Re-link old UID references to the new UID so servers/DMs reappear
+      if(oldUid&&oldUid!==uid){
+        await migrateUidReferences(oldUid,uid);
+      }
       showToast('✅ Perfil recuperado desde respaldo');
     }
   }
@@ -1707,6 +1714,43 @@ async function initUserProfile(firebaseUser,displayName,photoURL){
     if(eKey)await fbSet('usersByEmail/'+eKey,profile);
   }
 }
+
+// Re-points an old UID (from a previous Firebase project) to the new one
+// across servers/members, DM indexes, and message authorship — so a
+// Firebase project migration doesn't orphan the user from their data.
+async function migrateUidReferences(oldUid,newUid){
+  try{
+    // 1. Servers: update members[].uid/id wherever it matches the old UID
+    const srvSnap=await fbGet('state/servers');
+    if(srvSnap.exists()){
+      const val=srvSnap.val();
+      const servers=Array.isArray(val)?val:Object.values(val||{});
+      let changed=false;
+      servers.forEach(srv=>{
+        (srv.members||[]).forEach(m=>{
+          if(m.uid===oldUid||m.id===oldUid){ m.uid=newUid; m.id=newUid; changed=true; }
+        });
+      });
+      if(changed) await fbSet('state/servers',servers);
+    }
+    // 2. DMs: move dms/{oldUid} -> dms/{newUid}, and fix the reverse pointers
+    const dmSnap=await fbGet('dms/'+oldUid);
+    if(dmSnap.exists()){
+      const dmData=dmSnap.val();
+      await fbSet('dms/'+newUid,dmData);
+      await fbRemove('dms/'+oldUid);
+      // For each conversation partner, update their pointer back to us
+      for(const otherUid of Object.keys(dmData)){
+        const theirEntry=await fbGet('dms/'+otherUid+'/'+oldUid);
+        if(theirEntry.exists()){
+          await fbSet('dms/'+otherUid+'/'+newUid,theirEntry.val());
+          await fbRemove('dms/'+otherUid+'/'+oldUid);
+        }
+      }
+    }
+  }catch(e){ console.error('migrateUidReferences failed',e); }
+}
+
 async function doSignOut(){
   if(!confirm('¿Cerrar sesión?'))return;
   if(state.currentUser){
