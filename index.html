@@ -3975,7 +3975,16 @@ function sendMsg(msg){
 }
 
 // ── UTILS ──
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),3000);}
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast';
+    t.className='notification-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),3000);
+}
 function updateOnlineCount(){document.getElementById('online-count').textContent=Object.keys(state.onlineUsers).length;}
 function handleGlobalClick(e){
   if(!e.target.closest('#add-server-menu')&&!e.target.closest('#add-server-btn'))closeAddServerMenu();
