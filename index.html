@@ -743,16 +743,6 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <span id="server-name" onclick="openServerSettings()">Mensajes Directos</span>
       <button class="icon-btn" id="add-channel-btn" title="Crear canal" onclick="openAddChannelModal()" style="display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     </div>
-    <!-- THEME SWITCHER -->
-    <div id="theme-bar">
-      <span>Tema</span>
-      <div class="theme-dot active" data-theme="purple" style="background:#7c3aed" title="Morado" onclick="setTheme('purple',this)"></div>
-      <div class="theme-dot" data-theme="bw" style="background:#ffffff" title="Blanco" onclick="setTheme('bw',this)"></div>
-      <div class="theme-dot" data-theme="blue" style="background:#3b82f6" title="Azul" onclick="setTheme('blue',this)"></div>
-      <div class="theme-dot" data-theme="green" style="background:#16a34a" title="Verde" onclick="setTheme('green',this)"></div>
-      <div class="theme-dot" data-theme="red" style="background:#dc2626" title="Rojo" onclick="setTheme('red',this)"></div>
-      <div class="theme-dot" data-theme="pink" style="background:#db2777" title="Rosa" onclick="setTheme('pink',this)"></div>
-    </div>
     <div id="channels-list"></div>
     <div id="user-bar">
       <div class="user-avatar" onclick="openMyProfile()" id="my-user-avatar" style="background:var(--accent);">
@@ -2244,7 +2234,15 @@ function mediaHtml(msg){
   if(msg.imageUrl)return`<br><img class="msg-img" src="${msg.imageUrl}" alt="img" onclick="window.open('${msg.imageUrl}','_blank')" onerror="this.style.display='none'">`;
   if(msg.audioData)return`<br><audio controls src="${msg.audioData}" style="margin-top:6px;max-width:280px;border-radius:var(--r-sm);"></audio>`;
   if(msg.sticker)return`<div style="font-size:3rem;margin-top:4px;">${msg.sticker}</div>`;
+  // Auto-embed YouTube link if message contains one
+  const yt=extractYouTubeId(msg.content);
+  if(yt)return`<div style="margin-top:8px;max-width:400px;border-radius:var(--r-sm);overflow:hidden;aspect-ratio:16/9;background:#000;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${yt}" title="YouTube video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
   return'';
+}
+function extractYouTubeId(text){
+  if(!text)return null;
+  const m=text.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m?m[1]:null;
 }
 function openImgViewer(msgId){
   const msgs=state.messages[state.currentChannelId]||[];
@@ -3308,33 +3306,43 @@ function showProfilePopup(event,uid){
   if(!m)return;
   showProfilePopupByUid(event,uid,m);
 }
-function showProfilePopupByUid(event,uid,info){
+async function showProfilePopupByUid(event,uid,info){
   const popup=document.getElementById('profile-popup');
   if(!info){
     const srv=getServer(state.currentServerId);
     info=(srv?.members||[]).find(m=>(m.uid||m.id)===uid)||state.onlineUsers[uid]||{};
   }
-  // Try to get full profile from onlineUsers (has more data)
-  const fullUser=state.onlineUsers[uid]||{};
-  const u={...info,...fullUser};
+  // Position + open immediately, render what we have (avoids blank popup)
+  popup.style.left=Math.min(event.clientX+10,window.innerWidth-300)+'px';
+  popup.style.top=Math.min(event.clientY-20,window.innerHeight-360)+'px';
+  popup.classList.add('open');
+  popup.dataset.uid=uid;
+  const liveUser=state.onlineUsers[uid]||{};
+  renderProfilePopupContent({...info,...liveUser},uid,true); // loading=true, partial data
+  // Fetch full persisted profile (has avatarUrl/bannerUrl/bio even if user is offline)
+  let fullUser={};
+  try{const snap=await fbGet('users/'+uid);if(snap.exists())fullUser=snap.val();}catch(e){}
+  if(!popup.classList.contains('open')||popup.dataset.uid!==uid)return;
+  const u={...info,...fullUser,...liveUser};
+  renderProfilePopupContent(u,uid,false);
+}
+function renderProfilePopupContent(u,uid,loading){
   const name=u.name||'?';const color=u.avatarColor||u.color||'#7c3aed';const avatarUrl=u.avatarUrl||'';
   const bannerUrl=u.bannerUrl||'';
-  // Banner
   const bannerEl=document.getElementById('pp-banner');
   if(bannerUrl){bannerEl.style.backgroundImage=`url(${bannerUrl})`;bannerEl.style.backgroundSize='cover';bannerEl.style.backgroundPosition='center';bannerEl.style.background='';}
   else{bannerEl.style.backgroundImage='';bannerEl.style.background=`linear-gradient(135deg,${color},${color}66)`;}
+  bannerEl.style.opacity=loading?'.6':'1';
   const avaEl=document.getElementById('pp-ava');avaEl.style.background=avatarUrl?'#000':color;
-  avaEl.innerHTML=avatarUrl?`<img src="${avatarUrl}" onerror="this.style.display='none'">`:(name[0]||'?').toUpperCase();
+  avaEl.innerHTML=avatarUrl?`<img src="${avatarUrl}" onerror="this.parentElement.style.background='${color}';this.outerHTML='${(name[0]||'?').toUpperCase()}'">`:(name[0]||'?').toUpperCase();
   const dotEl=document.getElementById('pp-online-dot');
   if(dotEl){const st=state.onlineUsers[uid]?.status;const isOn=!!state.onlineUsers[uid]&&st!=='offline';dotEl.style.display=isOn?'block':'none';dotEl.style.background=st==='idle'?'var(--yellow)':st==='dnd'?'var(--red)':'var(--green)';}
   document.getElementById('pp-name').textContent=u.displayName||name;
   document.getElementById('pp-tag').textContent=u.tag||'';
-  // Status + bio
   const statusEl=document.getElementById('pp-status');
   statusEl.innerHTML='';
   if(u.customStatus){const s=document.createElement('div');s.style.cssText='font-size:.78rem;color:var(--text-2);font-style:italic;margin-bottom:6px;';s.textContent=u.customStatus;statusEl.appendChild(s);}
   if(u.bio){const b=document.createElement('div');b.style.cssText='font-size:.8rem;color:var(--text-2);line-height:1.5;margin-bottom:8px;padding:8px;background:var(--bg-3);border-radius:var(--r-xs);';b.textContent=u.bio;statusEl.appendChild(b);}
-  // Social links
   const social=u.social||{};
   const links=[];
   if(social.twitter)links.push(`<a href="https://twitter.com/${social.twitter.replace('@','')}" target="_blank" style="color:var(--accent-g);font-size:.75rem;text-decoration:none;">🐦 ${social.twitter}</a>`);
@@ -3347,11 +3355,8 @@ function showProfilePopupByUid(event,uid,info){
   const actEl=document.getElementById('pp-actions');
   if(uid!==state.currentUser.uid){actEl.innerHTML=`<button class="btn btn-primary" style="font-size:.8rem;padding:7px;" onclick="openDM('${uid}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Mensaje</button>${isServerAdmin(srv)?`<button class="btn btn-ghost" style="font-size:.8rem;padding:7px;" onclick="manageRoles('${uid}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 20h14"/></svg> Roles</button>`:''}`;
   }else{actEl.innerHTML=`<button class="btn btn-ghost" style="font-size:.8rem;padding:7px;width:100%;" onclick="openMyProfile()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Editar perfil</button>`;}
-  popup.style.left=Math.min(event.clientX+10,window.innerWidth-300)+'px';
-  popup.style.top=Math.min(event.clientY-20,window.innerHeight-360)+'px';
-  popup.classList.add('open');
 }
-function closeProfilePopup(){document.getElementById('profile-popup').classList.remove('open');}
+function closeProfilePopup(){const p=document.getElementById('profile-popup');p.classList.remove('open');delete p.dataset.uid;}
 function manageRoles(uid){
   const srv=getServer(state.currentServerId);if(!srv)return;
   const m=(srv.members||[]).find(m=>(m.uid||m.id)===uid);if(!m)return;
@@ -3399,10 +3404,16 @@ function saveUserSettings(){
   const customStatus=document.getElementById('us-status').value.trim();
   const status=document.getElementById('us-presence').value;
   const avatarColor=state.avatarSelectedColor;
+  const webRaw=document.getElementById('us-social-web').value.trim();
+  let webUrl='';
+  if(webRaw){
+    const href=webRaw.startsWith('http')?webRaw:'https://'+webRaw;
+    try{new URL(href);webUrl=href;}catch(e){showToast('⚠️ Sitio web no válido, se omitió');}
+  }
   const social={
-    twitter:document.getElementById('us-social-twitter').value.trim(),
-    github:document.getElementById('us-social-github').value.trim(),
-    web:document.getElementById('us-social-web').value.trim(),
+    twitter:document.getElementById('us-social-twitter').value.trim().replace(/^@/,''),
+    github:document.getElementById('us-social-github').value.trim().replace(/^@/,''),
+    web:webUrl,
   };
   const privacy={
     dm:document.getElementById('us-dm-privacy').value,
@@ -3581,8 +3592,20 @@ function closeCtx(){document.getElementById('context-menu').classList.remove('op
 function formatContent(text){
   if(!text)return'';
   const srv=getServer(state.currentServerId);const emojis=srv?.customEmojis||[];
-  let out=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/`(.*?)`/g,'<code style="background:var(--bg-3);border-radius:3px;padding:1px 4px;font-family:monospace">$1</code>').replace(/@(\w+)/g,(m,name)=>`<span class="mention${name===state.currentUser.name?' mine':''}">@${name}</span>`);
-  emojis.forEach(e=>{out=out.replace(new RegExp(':'+e.name+':','g'),`<img src="${e.url}" title=":${e.name}:" style="width:20px;height:20px;vertical-align:middle;">`);}); 
+  // Escape raw HTML first to avoid injection, then apply markdown
+  let out=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Code spans first (protect content from further formatting)
+  out=out.replace(/`(.*?)`/g,'<code style="background:var(--bg-3);border-radius:3px;padding:1px 4px;font-family:monospace">$1</code>');
+  out=out.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
+  out=out.replace(/@(\w+)/g,(m,name)=>`<span class="mention${name===state.currentUser.name?' mine':''}">@${name}</span>`);
+  // Auto-link valid URLs (http/https/www)
+  out=out.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+\.[a-z]{2,})/gi,url=>{
+    const href=url.startsWith('http')?url:'https://'+url;
+    try{new URL(href);}catch(e){return url;} // invalid URL, leave as text
+    const display=url.length>50?url.substring(0,47)+'...':url;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-g);text-decoration:underline;word-break:break-all;">${display}</a>`;
+  });
+  emojis.forEach(e=>{out=out.replace(new RegExp(':'+e.name+':','g'),`<img src="${e.url}" title=":${e.name}:" style="width:20px;height:20px;vertical-align:middle;">`);});
   return out;
 }
 
@@ -4125,14 +4148,7 @@ setInterval(()=>{
   }
 },60000);
 
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#emoji-picker')&&!e.target.closest('.input-btn'))closePicker();
-  if(!e.target.closest('#context-menu')&&!e.target.closest('.server-icon'))closeCtx?.();
-  if(!e.target.closest('#profile-popup')&&!e.target.closest('[data-uid]')&&!e.target.closest('.member-item'))closeProfilePopup?.();
-  if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id);
-  const uidEl=e.target.closest('[data-uid]');
-  if(uidEl){const uid=uidEl.dataset.uid;if(uid&&!uid.startsWith('bot_')&&uid!=='system')showProfilePopupByUid(e,uid,null);}
-});
+document.addEventListener('click',handleGlobalClick);
 </script>
 </body>
 </html>
