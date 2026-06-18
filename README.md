@@ -1,1 +1,1 @@
-# Nova: Chat, discover communities  and make friends
+# Nova:  A Universe of Chats and Communities
