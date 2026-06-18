@@ -709,7 +709,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
 </div>
 
 <div class="live-badge" id="live-badge" style="display:none;">
-  <div class="online-badge"><div class="online-pulse"></div><span id="online-count">0</span> en línea · <span class="nova-tag">✦ Nova</span></div>
+  <div class="online-badge"><div class="online-pulse"></div><span id="online-count">0</span> en línea</div>
 </div>
 <div id="profile-popup">
   <button onclick="closeProfilePopup()" style="position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.45);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">✕</button>
@@ -1070,12 +1070,12 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       </div>
       <label>Redes sociales <span style="color:var(--text-3);font-size:.75rem;">(hasta 6 enlaces)</span></label>
       <div style="display:flex;flex-direction:column;gap:6px;" id="us-socials-list">
-        <input type="text" class="us-social-link" placeholder="https://twitter.com/usuario o @usuario en X">
-        <input type="text" class="us-social-link" placeholder="https://github.com/usuario">
-        <input type="text" class="us-social-link" placeholder="https://instagram.com/usuario">
-        <input type="text" class="us-social-link" placeholder="Otro enlace...">
-        <input type="text" class="us-social-link" placeholder="Otro enlace...">
-        <input type="text" class="us-social-link" placeholder="Otro enlace...">
+        <input type="text" class="us-social-link" placeholder="https://... o @usuario">
+        <input type="text" class="us-social-link" placeholder="https://... o @usuario">
+        <input type="text" class="us-social-link" placeholder="https://... o @usuario">
+        <input type="text" class="us-social-link" placeholder="https://... o @usuario">
+        <input type="text" class="us-social-link" placeholder="https://... o @usuario">
+        <input type="text" class="us-social-link" placeholder="https://... o @usuario">
       </div>
     </div>
 
@@ -3444,7 +3444,7 @@ function renderProfilePopupContent(u,uid,loading){
   const dotEl=document.getElementById('pp-online-dot');
   if(dotEl){const st=state.onlineUsers[uid]?.status;const isOn=!!state.onlineUsers[uid]&&st!=='offline';dotEl.style.display=isOn?'block':'none';dotEl.style.background=st==='idle'?'var(--yellow)':st==='dnd'?'var(--red)':'var(--green)';}
   document.getElementById('pp-name').textContent=u.displayName||name;
-  document.getElementById('pp-tag').textContent=u.tag||'';
+  document.getElementById('pp-tag').textContent=u.handle?'@'+u.handle:(u.tag||'');
   const statusEl=document.getElementById('pp-status');
   statusEl.innerHTML='';
   if(u.customStatus){const s=document.createElement('div');s.style.cssText='font-size:.78rem;color:var(--text-2);font-style:italic;margin-bottom:6px;';s.textContent=u.customStatus;statusEl.appendChild(s);}
@@ -4407,11 +4407,13 @@ function updateOnlineCount(){
   let count;
   if(srv){
     const ids=new Set((srv.members||[]).map(m=>m.uid||m.id));
-    count=Object.values(state.onlineUsers).filter(u=>ids.has(u.uid)&&u.uid!==state.currentUser?.uid).length;
+    count=Object.values(state.onlineUsers).filter(u=>ids.has(u.uid)&&u.status!=='offline').length;
+    if(state.currentUser&&ids.has(state.currentUser.uid)&&!state.onlineUsers[state.currentUser.uid])count++;
   } else {
-    count=Math.max(0,Object.keys(state.onlineUsers).length-1);
+    count=Object.keys(state.onlineUsers).filter(k=>state.onlineUsers[k].status!=='offline').length;
+    if(state.currentUser&&!state.onlineUsers[state.currentUser.uid])count++;
   }
-  el.textContent=count;
+  el.textContent=Math.max(0,count);
 }
 function handleGlobalClick(e){
   if(!e.target.closest('#add-server-menu')&&!e.target.closest('#add-server-btn'))closeAddServerMenu();
