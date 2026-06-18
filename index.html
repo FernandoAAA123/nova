@@ -1853,7 +1853,7 @@ async function onUserLoggedIn(firebaseUser){
     const autoHandle=generateHandle(state.currentUser.name||'usuario');
     state.currentUser.handle=autoHandle;
     fbSet('handles/'+autoHandle,state.currentUser.uid);
-    fbUpdate(fbRef(window._db,'users/'+state.currentUser.uid),{handle:autoHandle});
+    fbUpdate('users/'+state.currentUser.uid,{handle:autoHandle});
   }
 
   const srvSnap=await fbGet('state/servers');
@@ -4181,14 +4181,14 @@ async function sendFriendRequest(){
 }
 async function acceptFriendRequest(uid){
   const me=state.currentUser.uid;
-  await fbUpdate(fbRef(window._db,'friends/'+me+'/'+uid),{status:'accepted'});
-  await fbUpdate(fbRef(window._db,'friends/'+uid+'/'+me),{status:'accepted'});
+  await fbUpdate('friends/'+me+'/'+uid,{status:'accepted'});
+  await fbUpdate('friends/'+uid+'/'+me,{status:'accepted'});
   showToast('✅ ¡Ahora son amigos!');
 }
 async function rejectFriendRequest(uid){
   const me=state.currentUser.uid;
-  await fbRemove(fbRef(window._db,'friends/'+me+'/'+uid));
-  await fbRemove(fbRef(window._db,'friends/'+uid+'/'+me));
+  await fbRemove('friends/'+me+'/'+uid);
+  await fbRemove('friends/'+uid+'/'+me);
 }
 async function cancelFriendRequest(uid){await rejectFriendRequest(uid);}
 async function removeFriend(uid){
