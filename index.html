@@ -643,10 +643,19 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
 .thread-item{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 24px;cursor:pointer;border-radius:var(--r-sm);margin:1px 6px;color:var(--text-3);font-size:.8rem;transition:all .1s;}
 .thread-item:hover{background:var(--bg-3);color:var(--text-1);}
 .thread-item.active{background:var(--bg-4);color:var(--text-0);}
+/* ── LINK EMBED CARD ── */
+.link-embed-card{display:flex;align-items:center;gap:10px;margin-top:8px;max-width:400px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r-sm);text-decoration:none;transition:background .15s,border-color .15s;}
+.link-embed-card:hover{background:var(--bg-4);border-color:var(--accent);}
+.link-embed-icon{width:28px;height:28px;border-radius:6px;flex-shrink:0;background:var(--bg-4);object-fit:contain;padding:3px;}
+.link-embed-info{flex:1;min-width:0;}
+.link-embed-domain{font-size:.82rem;font-weight:600;color:var(--text-0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.link-embed-path{font-size:.74rem;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.link-embed-arrow{color:var(--text-3);flex-shrink:0;}
+
 </style>
 
 
-<link rel="icon" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%237c3aed"/><path d="M8 10h16M8 16h10M8 22h13" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c3aed'/%3E%3Cpath d='M8 10h16M8 16h10M8 22h13' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -2238,7 +2247,30 @@ function mediaHtml(msg){
   // Auto-embed YouTube link if message contains one
   const yt=extractYouTubeId(msg.content);
   if(yt)return`<div style="margin-top:8px;max-width:400px;border-radius:var(--r-sm);overflow:hidden;aspect-ratio:16/9;background:#000;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${yt}" title="YouTube video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+  // Generic link-preview card for other URLs (image links handled separately)
+  const linkCard=buildLinkEmbed(msg.content);
+  if(linkCard)return linkCard;
   return'';
+}
+function buildLinkEmbed(text){
+  if(!text)return'';
+  const m=text.match(/(https?:\/\/[^\s<]+|www\.[^\s<]+\.[a-z]{2,}[^\s<]*)/i);
+  if(!m)return'';
+  const raw=m[0];const href=raw.startsWith('http')?raw:'https://'+raw;
+  let u;try{u=new URL(href);}catch(e){return'';}
+  const imgExt=/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i;
+  if(imgExt.test(u.pathname))return`<a href="${href}" target="_blank" rel="noopener noreferrer"><img class="msg-img" src="${href}" alt="img" style="margin-top:8px;cursor:zoom-in;" onerror="this.parentElement.style.display='none'"></a>`;
+  const domain=u.hostname.replace(/^www\./,'');
+  const favicon=`https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`;
+  const pathPreview=(u.pathname!=='/'?u.pathname:'')+(u.search||'');
+  return`<a href="${href}" target="_blank" rel="noopener noreferrer" class="link-embed-card">
+    <img src="${favicon}" class="link-embed-icon" onerror="this.style.display='none'">
+    <div class="link-embed-info">
+      <div class="link-embed-domain">${domain}</div>
+      ${pathPreview?`<div class="link-embed-path">${pathPreview.length>60?pathPreview.substring(0,57)+'...':pathPreview}</div>`:''}
+    </div>
+    <svg class="link-embed-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+  </a>`;
 }
 function extractYouTubeId(text){
   if(!text)return null;
