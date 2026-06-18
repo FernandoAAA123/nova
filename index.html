@@ -299,7 +299,7 @@ select option{background:var(--bg-3);color:var(--text-0);}
 .member-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;overflow:hidden;position:relative;}
 .member-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
 .member-status{position:absolute;bottom:-2px;right:-2px;width:11px;height:11px;border-radius:50%;border:2.5px solid var(--bg-1);z-index:2;pointer-events:none;}
-.member-item{position:relative;}.member-item .member-status{position:absolute;bottom:4px;left:28px;}
+.member-item{position:relative;}.member-avatar-wrap{position:relative;flex-shrink:0;}
 .member-info{flex:1;min-width:0;}
 .member-name{font-size:.83rem;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
 .member-item:hover .member-name{color:var(--text-0);}
@@ -2013,7 +2013,7 @@ function updateUserBar(){
   if(!state.currentUser)return;
   const u=state.currentUser;
   document.getElementById('uname-display').textContent=u.name;
-  document.getElementById('utag-display').textContent=u.tag||'';
+  document.getElementById('utag-display').textContent=u.handle?'@'+u.handle:(u.tag||'');
   const ava=document.getElementById('my-user-avatar');
   ava.style.background=u.avatarUrl?'#000':u.avatarColor;
   if(u.avatarUrl){ava.innerHTML=`<img src="${u.avatarUrl}" onerror="this.style.display='none'"><div class="user-status-dot" style="background:${STATUS_COLORS[u.status]||STATUS_COLORS.online}"></div>`;}
@@ -2417,8 +2417,9 @@ function buildMemberEl(m,isOnline){
   const div=document.createElement('div');div.className='member-item';
   const avatarC=m.avatarUrl?`<img src="${m.avatarUrl}" onerror="this.style.display='none'">`:(m.name||'?')[0].toUpperCase();
   const bg=m.avatarUrl?'#000':(m.color||m.avatarColor||'#5865f2');
-  const statusColor=STATUS_COLORS[isOnline?'online':'offline'];
-  div.innerHTML=`<div class="member-avatar" style="background:${bg}">${avatarC}<div class="member-status" style="background:${statusColor}"></div></div><div class="member-info"><div class="member-name" style="color:${isOnline?(m.color||'var(--text-1)'):'var(--text-3)'}">${m.name||'?'}${uid===state.currentUser.uid?' <span style="font-size:.65rem;color:var(--accent);">(tú)</span>':''}</div></div>`;
+  const realStatus=state.onlineUsers[uid]?.status||'offline';
+  const statusColor=STATUS_COLORS[isOnline?realStatus:'offline'];
+  div.innerHTML=`<div class="member-avatar-wrap"><div class="member-avatar" style="background:${bg}">${avatarC}</div><div class="member-status" style="background:${statusColor}"></div></div><div class="member-info"><div class="member-name" style="color:${isOnline?(m.color||'var(--text-1)'):'var(--text-3)'}">${m.name||'?'}${uid===state.currentUser.uid?' <span style="font-size:.65rem;color:var(--accent);">(tú)</span>':''}</div></div>`;
   div.onclick=e=>{showProfilePopupByUid(e,uid,m);e.stopPropagation();};
   return div;
 }
