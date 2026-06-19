@@ -1798,7 +1798,6 @@ async function initUserProfile(firebaseUser,displayName,photoURL){
 // Deep-replaces every occurrence of oldUid with newUid across the entire database.
 // Walks all known root nodes recursively, patching both keys and string values.
 async function migrateUidReferences(oldUid,newUid){
-  // Recursively replace oldUid inside a JS value (object/array/string)
   function replaceDeep(val){
     if(typeof val==='string') return val.split(oldUid).join(newUid);
     if(Array.isArray(val)) return val.map(replaceDeep);
@@ -1813,7 +1812,19 @@ async function migrateUidReferences(oldUid,newUid){
     return val;
   }
 
-  // Root nodes to sweep — covers every path the app uses
+  // Collect all keys (at any depth) that contain oldUid and need to be deleted
+  function collectOldKeys(val,path,toDelete){
+    if(!val||typeof val!=='object')return;
+    for(const k of Object.keys(val)){
+      const fullPath=path+'/'+k;
+      if(k.includes(oldUid)){
+        toDelete.push(fullPath);
+      } else {
+        collectOldKeys(val[k],fullPath,toDelete);
+      }
+    }
+  }
+
   const ROOT_NODES=['state','dms','dmMessages','friends','handles','presence','calls','typing','users','usersByEmail','xp'];
 
   try{
@@ -1822,9 +1833,17 @@ async function migrateUidReferences(oldUid,newUid){
       if(!snap||!snap.exists())continue;
       const original=snap.val();
       const patched=replaceDeep(original);
-      // Only write if something actually changed
-      if(JSON.stringify(original)!==JSON.stringify(patched)){
-        await fbSet(node,patched);
+      const changed=JSON.stringify(original)!==JSON.stringify(patched);
+      if(!changed)continue;
+
+      // Write patched data
+      await fbSet(node,patched);
+
+      // Delete old keys that contained oldUid (now duplicated under new key)
+      const toDelete=[];
+      collectOldKeys(original,node,toDelete);
+      for(const oldPath of toDelete){
+        await fbRemove(oldPath).catch(()=>{});
       }
     }
   }catch(e){ console.error('migrateUidReferences failed',e); }
