@@ -1795,37 +1795,36 @@ async function initUserProfile(firebaseUser,displayName,photoURL){
   }
 }
 
-// Re-points an old UID (from a previous Firebase project) to the new one
-// across servers/members, DM indexes, and message authorship — so a
-// Firebase project migration doesn't orphan the user from their data.
+// Deep-replaces every occurrence of oldUid with newUid across the entire database.
+// Walks all known root nodes recursively, patching both keys and string values.
 async function migrateUidReferences(oldUid,newUid){
-  try{
-    // 1. Servers: update members[].uid/id wherever it matches the old UID
-    const srvSnap=await fbGet('state/servers');
-    if(srvSnap.exists()){
-      const val=srvSnap.val();
-      const servers=Array.isArray(val)?val:Object.values(val||{});
-      let changed=false;
-      servers.forEach(srv=>{
-        (srv.members||[]).forEach(m=>{
-          if(m.uid===oldUid||m.id===oldUid){ m.uid=newUid; m.id=newUid; changed=true; }
-        });
-      });
-      if(changed) await fbSet('state/servers',servers);
+  // Recursively replace oldUid inside a JS value (object/array/string)
+  function replaceDeep(val){
+    if(typeof val==='string') return val===oldUid?newUid:val;
+    if(Array.isArray(val)) return val.map(replaceDeep);
+    if(val&&typeof val==='object'){
+      const out={};
+      for(const k of Object.keys(val)){
+        const newKey=k===oldUid?newUid:k;
+        out[newKey]=replaceDeep(val[k]);
+      }
+      return out;
     }
-    // 2. DMs: move dms/{oldUid} -> dms/{newUid}, and fix the reverse pointers
-    const dmSnap=await fbGet('dms/'+oldUid);
-    if(dmSnap.exists()){
-      const dmData=dmSnap.val();
-      await fbSet('dms/'+newUid,dmData);
-      await fbRemove('dms/'+oldUid);
-      // For each conversation partner, update their pointer back to us
-      for(const otherUid of Object.keys(dmData)){
-        const theirEntry=await fbGet('dms/'+otherUid+'/'+oldUid);
-        if(theirEntry.exists()){
-          await fbSet('dms/'+otherUid+'/'+newUid,theirEntry.val());
-          await fbRemove('dms/'+otherUid+'/'+oldUid);
-        }
+    return val;
+  }
+
+  // Root nodes to sweep — covers every path the app uses
+  const ROOT_NODES=['state','dms','dmMessages','friends','handles','presence','calls','typing','users','usersByEmail','xp'];
+
+  try{
+    for(const node of ROOT_NODES){
+      const snap=await fbGet(node).catch(()=>null);
+      if(!snap||!snap.exists())continue;
+      const original=snap.val();
+      const patched=replaceDeep(original);
+      // Only write if something actually changed
+      if(JSON.stringify(original)!==JSON.stringify(patched)){
+        await fbSet(node,patched);
       }
     }
   }catch(e){ console.error('migrateUidReferences failed',e); }
