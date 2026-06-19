@@ -296,6 +296,16 @@ select option{background:var(--bg-3);color:var(--text-0);}
 .sticker-item{background:var(--bg-3);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;font-size:2.8rem;transition:all .15s;border:1.5px solid transparent;}
 .sticker-item:hover{background:var(--bg-4);transform:scale(1.05);border-color:var(--accent);}
 .sticker-label{font-size:.62rem;color:var(--text-2);margin-top:4px;display:block;font-weight:600;}
+/* Custom image sticker grid (server settings + picker) */
+.img-sticker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.img-sticker-item{background:var(--bg-3);border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all .15s;border:1.5px solid transparent;}
+.img-sticker-item:hover{background:var(--bg-4);transform:scale(1.05);border-color:var(--accent);}
+.img-sticker-item img{width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;}
+/* Inline custom emoji inside message text — slightly larger than text, Discord-like */
+.msg-content img.inline-emoji{width:22px;height:22px;object-fit:contain;vertical-align:-6px;margin:0 1px;}
+/* Emoji-only message: no text alongside, render big like Discord/WhatsApp */
+.msg-content.emoji-only{font-size:2.6rem;line-height:1.3;}
+.msg-content.emoji-only img.inline-emoji{width:2.6rem;height:2.6rem;vertical-align:-.5rem;margin:0 2px;}
 /* GIF badge */
 .gif-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.5rem;font-weight:800;border-radius:3px;padding:1px 3px;vertical-align:super;margin-left:2px;}
 
@@ -806,8 +816,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <div class="header-actions">
         <button class="icon-btn" onclick="openSearchModal()" title="Buscar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
         <!-- Community-only buttons (hidden in DM) -->
-        <button class="icon-btn mobile-hide community-only" onclick="toggleChannelNote()" title="Nota del canal">📝</button>
-        <button class="icon-btn mobile-hide community-only" onclick="openFocusMode()" title="Modo enfoque">🎯</button>
+        <button class="icon-btn mobile-hide community-only" onclick="toggleChannelNote()" title="Nota del canal"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="icon-btn mobile-hide community-only" onclick="openFocusMode()" title="Modo enfoque"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></button>
         <button class="icon-btn mobile-hide community-only" onclick="openGlobalSearch()" title="Búsqueda global"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
         <button class="icon-btn mobile-hide community-only" onclick="openModal('thread-modal')" title="Nuevo hilo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
         <button class="icon-btn mobile-hide community-only" onclick="openModal('poll-modal')" title="Encuesta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
@@ -834,7 +844,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     </div>
     <!-- Featured channel banner (admin-set, shown above messages) -->
     <div id="featured-banner" style="display:none;flex-shrink:0;margin:8px 16px 0;padding:10px 14px;background:linear-gradient(90deg,var(--accent-glow),transparent);border:1px solid rgba(124,58,237,.25);border-radius:10px;font-size:.82rem;color:var(--text-1);align-items:center;gap:8px;">
-      <span style="font-size:1rem;">📌</span>
+      <span style="display:inline-flex;color:var(--accent);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg></span>
       <span id="featured-banner-text" style="flex:1;margin:0 8px;"></span>
       <span onclick="closeFeaturedBanner()" style="color:var(--text-3);font-size:.75rem;cursor:pointer;">✕</span>
     </div>
@@ -847,7 +857,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     <!-- Channel note bar (personal, per channel) -->
     <div id="channel-note-bar" style="display:none;flex-shrink:0;margin:0 16px 6px;border-radius:10px;background:var(--bg-3);border:1px solid var(--border);overflow:hidden;">
       <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--border);">
-        <span style="font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);">📝 Nota del canal</span>
+        <span style="font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Nota del canal</span>
         <button onclick="saveChannelNote()" style="margin-left:auto;font-size:.7rem;padding:2px 8px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;">Guardar</button>
         <button onclick="toggleChannelNote()" style="font-size:.7rem;padding:2px 8px;background:var(--bg-4);color:var(--text-2);border:none;border-radius:6px;cursor:pointer;">✕</button>
       </div>
@@ -863,7 +873,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
         <button class="input-btn" onclick="togglePicker('emoji')" title="Emojis"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
         <button class="input-btn" onclick="togglePicker('custom')" title="Emojis custom"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
         <button class="input-btn" onclick="togglePicker('sticker')" title="Stickers"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M9 13h6"/><path d="M9 17h3"/><polyline points="14 2 14 8 20 8"/></svg></button>
-        <button class="input-btn" onclick="openScheduledMessage()" title="Programar mensaje">🕐</button>
+        <button class="input-btn" onclick="openScheduledMessage()" title="Programar mensaje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
         <button class="input-btn" onclick="sendMessage()" title="Enviar" style="color:var(--accent);"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <!-- PICKER PREMIUM -->
@@ -1032,10 +1042,10 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     <h2>Crear canal</h2>
     <label>Tipo</label>
     <select id="new-channel-type">
-      <option value="text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Texto</option>
+      <option value="text">💬 Texto</option>
       <option value="voice">🔊 Voz</option>
       <option value="announcement">📢 Anuncios</option>
-      <option value="forum"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> Foro</option>
+      <option value="forum">🗂️ Foro</option>
     </select>
     <label>Nombre</label><input type="text" id="new-channel-name" placeholder="nuevo-canal">
     <label>Categoría</label><select id="new-channel-category"></select>
@@ -1217,7 +1227,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
         <button class="btn btn-ghost btn-sm" onclick="copyUID()">Copiar</button>
       </div>
       <div style="margin-top:20px;padding:14px;background:rgba(244,63,94,.05);border:1px solid rgba(244,63,94,.15);border-radius:var(--r-sm);">
-        <div style="font-size:.875rem;font-weight:600;color:var(--red);margin-bottom:6px;">⚠️ Zona de peligro</div>
+        <div style="font-size:.875rem;font-weight:600;color:var(--red);margin-bottom:6px;display:flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Zona de peligro</div>
         <div style="font-size:.78rem;color:var(--text-3);margin-bottom:12px;">Esta acción es permanente e irreversible.</div>
         <button class="btn btn-danger" style="width:100%;" onclick="deleteMyAccount()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar cuenta permanentemente</button>
       </div>
@@ -1431,7 +1441,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
         <input type="hidden" id="ce-b64">
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;">
           <input type="text" id="ce-name" placeholder="nombre_del_emoji" style="flex:1;margin:0;">
-          <button class="btn btn-primary" onclick="addCustomEmoji()">✅ Agregar</button>
+          <button class="btn btn-primary" onclick="addCustomEmoji()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>Agregar</button>
         </div>
         <!-- Table like Discord -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1449,11 +1459,30 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <div class="ss-section" id="ss-sec-stickers">
         <div class="ss-section-header">
           <h2 class="ss-section-title">Stickers</h2>
-          <p class="ss-section-desc">Los stickers son los emojis grandes del servidor. Próximamente.</p>
+          <p class="ss-section-desc">Añade hasta 30 stickers personalizados (PNG, GIF, WebP). Se muestran en grande al enviarlos.</p>
         </div>
-        <div style="text-align:center;padding:40px 0;color:var(--text-3);">
-          <div style="font-size:3rem;margin-bottom:12px;">🎭</div>
-          <div style="font-size:.9rem;font-weight:600;color:var(--text-2);">Próximamente</div>
+        <div id="cs-dropzone" onclick="document.getElementById('cs-file').click()"
+          style="border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:16px;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-glow)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
+          <div id="cs-preview" style="width:72px;height:72px;border-radius:12px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden;font-size:2rem;">＋</div>
+          <div style="font-size:.9rem;font-weight:600;color:var(--text-1);">Haz clic para subir un sticker</div>
+          <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">PNG, GIF, WebP — se comprime automáticamente</div>
+        </div>
+        <input type="file" id="cs-file" accept="image/*" style="display:none" onchange="handleStickerUpload(this)">
+        <input type="hidden" id="cs-b64">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;">
+          <input type="text" id="cs-name" placeholder="nombre del sticker" style="flex:1;margin:0;">
+          <button class="btn btn-primary" onclick="addCustomSticker()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>Agregar</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="ss-field-label" style="margin:0;">Stickers del servidor — <span id="cs-count">0</span>/30</div>
+        </div>
+        <div style="background:var(--bg-3);border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+          <div style="display:grid;grid-template-columns:60px 1fr 1fr auto;padding:10px 16px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);border-bottom:1px solid var(--border);">
+            <span>Imagen</span><span>Nombre</span><span>Subido por</span><span></span>
+          </div>
+          <div id="cs-list"></div>
         </div>
       </div>
 
@@ -1707,8 +1736,8 @@ const CHAN_ICONS={
   forum:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
 };
 const ROLE_COLORS=['#ed4245','#faa81a','#3ba55d','#5865f2','#eb459e','#00b0f4'];
-const DEFAULT_EMOJIS=['😀','😂','🤣','😍','🥰','😎','🤔','😴','🤯','🥳','🎉','🔥','💯','✅','❤️','💙','💚','💜','🌟','⚡','🎮','🎵','🍕','🚀','👋','👏','🙌','💪','🤝','👀','🐸','🦜','🐶','🐱','🦊','🐻','🎂','🌈','☀️','🌙','⭐','❄️','🌺','🍀','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>','💎','📢','🎯','😅','😭','🤦','🤷','👌','✌️','🫡','🫠','🥹','😤','🤬','💀','👻','🤡','🎃','🫶','🫂'];
-const DEFAULT_STICKERS=[{n:'Baile',e:'💃'},{n:'Fuego',e:'🔥'},{n:'Shock',e:'😱'},{n:'Sueño',e:'😴'},{n:'Risa',e:'🤣'},{n:'Fuerza',e:'💪'},{n:'Amor',e:'❤️'},{n:'GG',e:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>'},{n:'Hype',e:'🎉'},{n:'Pog',e:'😮'},{n:'NoWay',e:'🙅'},{n:'Palmas',e:'👏'}];
+const DEFAULT_EMOJIS=['😀','😂','🤣','😍','🥰','😎','🤔','😴','🤯','🥳','🎉','🔥','💯','✅','❤️','💙','💚','💜','🌟','⚡','🎮','🎵','🍕','🚀','👋','👏','🙌','💪','🤝','👀','🐸','🦜','🐶','🐱','🦊','🐻','🎂','🌈','☀️','🌙','⭐','❄️','🌺','🍀','🏆','💎','📢','🎯','😅','😭','🤦','🤷','👌','✌️','🫡','🫠','🥹','😤','🤬','💀','👻','🤡','🎃','🫶','🫂'];
+const DEFAULT_STICKERS=[{n:'Baile',e:'💃'},{n:'Fuego',e:'🔥'},{n:'Shock',e:'😱'},{n:'Sueño',e:'😴'},{n:'Risa',e:'🤣'},{n:'Fuerza',e:'💪'},{n:'Amor',e:'❤️'},{n:'GG',e:'🏆'},{n:'Hype',e:'🎉'},{n:'Pog',e:'😮'},{n:'NoWay',e:'🙅'},{n:'Palmas',e:'👏'}];
 // Bots son extensiones externas — ver bot-*.html
 
 let state={
@@ -2370,7 +2399,7 @@ function renderForumPosts(ch){
         <div style="font-size:.85rem;color:var(--text-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.content||''}</div>
         <div style="display:flex;gap:12px;margin-top:10px;font-size:.75rem;color:var(--text-3);">
           <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${(state.messages[p.id]||[]).length} respuestas</span>
-          ${p.reactions?.length?`<span>❤️ ${p.reactions.reduce((s,r)=>s+(r.users?.length||0),0)}</span>`:''}
+          ${p.reactions?.length?`<span style="display:inline-flex;align-items:center;gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> ${p.reactions.reduce((s,r)=>s+(r.users?.length||0),0)}</span>`:''}
         </div>
       </div>`).join('')
     :'<div class="empty-state" style="margin-top:40px;"><div class="big-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><h3>Sin publicaciones aún</h3><p style="color:var(--text-3);font-size:.85rem;margin-top:6px;">Sé el primero en crear una publicación</p></div>'}`;
@@ -2426,11 +2455,13 @@ function renderMessages(){
     const botBadge=isBot?'<span class="bot-badge">BOT</span>':'';
     const replyHtml=msg.replyTo?buildReplyPreview(msg.replyTo,msgs):'';
     if(isCont){
-      wrap.innerHTML=replyHtml+`<div class="msg-continuation" style="display:flex;gap:14px;"><span class="cont-time">${fmtTime(msg.ts)}</span><div class="msg-body"><div class="msg-content">${formatContent(msg.content)}${mediaHtml(msg)}</div>${msg.edited?'<span class="msg-edited">(editado)</span>':''}${reactionsHtml(msg)}</div><div class="msg-hover-actions">${hoverBtns(msg,isMe)}</div></div>`;
+      const contClass='msg-content'+(isEmojiOnlyContent(msg.content)?' emoji-only':'');
+      wrap.innerHTML=replyHtml+`<div class="msg-continuation" style="display:flex;gap:14px;"><span class="cont-time">${fmtTime(msg.ts)}</span><div class="msg-body"><div class="${contClass}">${formatContent(msg.content)}${mediaHtml(msg)}</div>${msg.edited?'<span class="msg-edited">(editado)</span>':''}${reactionsHtml(msg)}</div><div class="msg-hover-actions">${hoverBtns(msg,isMe)}</div></div>`;
     }else{
       const avatarStyle=`background:${msg.avatarUrl?'#000':msg.color}`;
       const avatarContent=msg.avatarUrl?`<img src="${msg.avatarUrl}" onerror="this.style.display='none'">`:(msg.name||'?')[0].toUpperCase();
-      wrap.innerHTML=replyHtml+`<div class="msg-group"><div class="msg-avatar" style="${avatarStyle}" data-uid="${msg.uid}">${avatarContent}</div><div class="msg-body"><div class="msg-meta"><span class="msg-author" style="color:${msg.roleColor||'var(--text-1)'}" data-uid="${msg.uid}">${msg.name}${botBadge}</span><span class="msg-time">${fmtDateTime(msg.ts)}</span>${msg.pinned?'<span style="font-size:.65rem;color:var(--yellow);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg></span>':''}</div><div class="msg-content">${formatContent(msg.content)}${mediaHtml(msg)}</div>${msg.edited?'<span class="msg-edited">(editado)</span>':''}${reactionsHtml(msg)}</div><div class="msg-hover-actions">${hoverBtns(msg,isMe)}</div></div>`;
+      const mainClass='msg-content'+(isEmojiOnlyContent(msg.content)?' emoji-only':'');
+      wrap.innerHTML=replyHtml+`<div class="msg-group"><div class="msg-avatar" style="${avatarStyle}" data-uid="${msg.uid}">${avatarContent}</div><div class="msg-body"><div class="msg-meta"><span class="msg-author" style="color:${msg.roleColor||'var(--text-1)'}" data-uid="${msg.uid}">${msg.name}${botBadge}</span><span class="msg-time">${fmtDateTime(msg.ts)}</span>${msg.pinned?'<span style="font-size:.65rem;color:var(--yellow);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg></span>':''}</div><div class="${mainClass}">${formatContent(msg.content)}${mediaHtml(msg)}</div>${msg.edited?'<span class="msg-edited">(editado)</span>':''}${reactionsHtml(msg)}</div><div class="msg-hover-actions">${hoverBtns(msg,isMe)}</div></div>`;
     }
     el.appendChild(wrap);prevUid=msg.uid;prevTs=msg.ts;
   });
@@ -2455,7 +2486,7 @@ function mediaHtml(msg){
           <div class="poll-bar" style="width:${myVote||ended?pct:0}%"></div>
           <span class="poll-opt-text">${o.text}</span>
           ${myVote||ended?`<span class="poll-pct">${pct}%</span>`:''}
-          ${voted?'<span style="font-size:.75rem;">✅</span>':''}
+          ${voted?'<span style="display:inline-flex;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>':''}
         </div>`;
       }).join('')}
       <div class="poll-meta">
@@ -2475,7 +2506,7 @@ function mediaHtml(msg){
       ${ev.location?`<div style="font-size:.78rem;color:var(--text-2);margin-bottom:10px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> ${ev.location}</div>`:''}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <button class="btn ${attending?'btn-ghost':'btn-primary'} btn-sm" onclick="toggleAttendEvent('${msg.id}')">
-          ${attending?'✅ Asistiré':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Asistir'}
+          ${attending?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Asistiré':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Asistir'}
         </button>
         <span style="font-size:.72rem;color:var(--text-3);">${ev.attendees?.length||0} asistente${ev.attendees?.length!==1?'s':''}</span>
       </div>
@@ -2484,6 +2515,7 @@ function mediaHtml(msg){
   if(msg.imageData)return`<br><img class="msg-img" src="${msg.imageData}" alt="img" onclick="openImgViewer('${msg.id}')" style="cursor:zoom-in;">`;
   if(msg.imageUrl)return`<br><img class="msg-img" src="${msg.imageUrl}" alt="img" onclick="window.open('${msg.imageUrl}','_blank')" onerror="this.style.display='none'">`;
   if(msg.audioData)return`<br><audio controls src="${msg.audioData}" style="margin-top:6px;max-width:280px;border-radius:var(--r-sm);"></audio>`;
+  if(msg.stickerUrl)return`<img src="${msg.stickerUrl}" alt="${msg.sticker||'sticker'}" style="width:140px;height:140px;object-fit:contain;margin-top:4px;display:block;">`;
   if(msg.sticker)return`<div style="font-size:3rem;margin-top:4px;">${msg.sticker}</div>`;
   // Auto-embed YouTube link if message contains one
   const yt=extractYouTubeId(msg.content);
@@ -2692,6 +2724,17 @@ function sendSticker(e,n){
   if(!state.currentChannelId)return;
   const u=state.currentUser;
   const msg={id:'msg'+genId(12),uid:u.uid,name:u.name,color:u.avatarColor,avatarUrl:u.avatarUrl||'',content:'',sticker:e,ts:Date.now(),reactions:[],pinned:false};
+  const isDM=state.currentChannelId.startsWith('dm_');
+  if(isDM){fbSet('dmMessages/'+state.currentChannelId.replace('dm_','')+'/'+msg.id,msg);}
+  else{fbSet('state/messages/'+state.currentChannelId+'/'+msg.id,msg);}
+  if(!state.messages[state.currentChannelId])state.messages[state.currentChannelId]=[];
+  state.messages[state.currentChannelId].push(msg);
+  renderMessages();closePicker();
+}
+function sendImageSticker(url,name){
+  if(!state.currentChannelId)return;
+  const u=state.currentUser;
+  const msg={id:'msg'+genId(12),uid:u.uid,name:u.name,color:u.avatarColor,avatarUrl:u.avatarUrl||'',content:'',sticker:name||'sticker',stickerUrl:url,ts:Date.now(),reactions:[],pinned:false};
   const isDM=state.currentChannelId.startsWith('dm_');
   if(isDM){fbSet('dmMessages/'+state.currentChannelId.replace('dm_','')+'/'+msg.id,msg);}
   else{fbSet('state/messages/'+state.currentChannelId+'/'+msg.id,msg);}
@@ -2912,7 +2955,7 @@ function createServer(){
     channels:[{id:'cat'+id+'0',name:'TEXTO',type:'category',children:[{id:'ch'+genId(8),name:'general',type:'text',private:false},{id:'ch'+genId(8),name:'anuncios',type:'announcement',private:false}]},{id:'cat'+id+'1',name:'VOZ',type:'category',children:[{id:'ch'+genId(8),name:'General',type:'voice',private:false}]}],
     members:[{uid:state.currentUser.uid,id:state.currentUser.uid,name:state.currentUser.name,color:state.currentUser.avatarColor,avatarUrl:state.currentUser.avatarUrl||'',roles:['Admin']}],
     roles:[{id:'r1',name:'Admin',color:'#f43f5e',hoist:true},{id:'r2',name:'Moderador',color:'#f59e0b',hoist:true},{id:'r3',name:'Miembro',color:'#7c3aed',hoist:false}],
-    customEmojis:[],inviteCode:genId(8)};
+    customEmojis:[],customStickers:[],inviteCode:genId(8)};
   state.servers.push(srv);saveServers();closeModal('create-server-modal');
   document.getElementById('new-server-name').value='';
   document.getElementById('new-server-icon-b64').value='';document.getElementById('new-server-type').value='public';
@@ -2932,6 +2975,7 @@ function openSsSection(section, btn){
   const srv=getServer(state.currentServerId);if(!srv)return;
   if(section==='roles')renderRolesList(srv);
   if(section==='emojis')renderCustomEmojiList(srv);
+  if(section==='stickers')renderCustomStickerList(srv);
   if(section==='members')renderSsMembers(srv);
   if(section==='channels')renderSsChannels(srv);
   if(section==='audit')renderAuditLog(srv);
@@ -3198,7 +3242,7 @@ function renderRoleEditorSettings(srv,idx){
       ${Object.entries(PERMISSIONS).map(([key,info])=>`
         <div class="perm-row">
           <div class="perm-info">
-            <div class="perm-name">${info.name}${info.danger?'<span style="color:var(--red);margin-left:6px;font-size:.65rem;font-weight:700;">⚠️ PELIGROSO</span>':''}</div>
+            <div class="perm-name">${info.name}${info.danger?'<span style="color:var(--red);margin-left:6px;font-size:.65rem;font-weight:700;display:inline-flex;align-items:center;gap:3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>PELIGROSO</span>':''}</div>
             <div class="perm-desc">${info.desc}</div>
           </div>
           <div class="toggle ${perms[key]?'on':''}" data-perm="${key}" onclick="toggleRolePerm(this,'${key}',${idx})"></div>
@@ -3461,7 +3505,7 @@ function renderCustomEmojiList(srv){
   const countEl=document.getElementById('ce-count');
   if(countEl)countEl.textContent=emojis.length;
   if(!emojis.length){
-    el.innerHTML='<div class="ce-table-row" style="justify-content:center;color:var(--text-3);font-size:.85rem;padding:24px;">Sin emojis aún — sube el primero arriba 👆</div>';
+    el.innerHTML='<div class="ce-table-row" style="justify-content:center;color:var(--text-3);font-size:.85rem;padding:24px;gap:6px;">Sin emojis aún — sube el primero arriba <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>';
     return;
   }
   el.innerHTML=emojis.map((e,i)=>`
@@ -3473,6 +3517,56 @@ function renderCustomEmojiList(srv){
     </div>`).join('');
 }
 function deleteCustomEmoji(idx){const srv=getServer(state.currentServerId);if(!srv)return;srv.customEmojis.splice(idx,1);saveServers();renderCustomEmojiList(srv);}
+
+// ── CUSTOM STICKERS (server) ──
+function addCustomSticker(){
+  const name=document.getElementById('cs-name').value.trim();
+  const b64=document.getElementById('cs-b64').value;
+  if(!name){showToast('Nombre requerido');return;}
+  if(!b64){showToast('Sube una imagen primero');return;}
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  if(!srv.customStickers)srv.customStickers=[];
+  if(srv.customStickers.length>=30){showToast('Máximo 30 stickers por servidor');return;}
+  srv.customStickers.push({name,url:b64,uploadedBy:state.currentUser?.name||'?',uploadedAt:Date.now()});
+  saveServers();
+  document.getElementById('cs-name').value='';
+  document.getElementById('cs-b64').value='';
+  document.getElementById('cs-preview').innerHTML='＋';
+  renderCustomStickerList(srv);showToast('Sticker "'+name+'" agregado');
+}
+function renderCustomStickerList(srv){
+  const el=document.getElementById('cs-list');if(!el)return;
+  const stickers=srv?.customStickers||[];
+  const countEl=document.getElementById('cs-count');
+  if(countEl)countEl.textContent=stickers.length;
+  if(!stickers.length){
+    el.innerHTML='<div class="ce-table-row" style="justify-content:center;color:var(--text-3);font-size:.85rem;padding:24px;">Sin stickers aún — sube el primero arriba</div>';
+    return;
+  }
+  el.innerHTML=stickers.map((s,i)=>`
+    <div class="ce-table-row">
+      <div><img src="${s.url}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;"></div>
+      <div style="font-size:.875rem;color:var(--text-1);font-weight:600;">${s.name}</div>
+      <div style="font-size:.78rem;color:var(--text-3);">${s.uploadedBy||state.currentUser?.name||'?'}</div>
+      <button onclick="deleteCustomSticker(${i})" style="background:rgba(244,63,94,.12);border:none;color:var(--red);cursor:pointer;border-radius:6px;padding:4px 8px;font-size:.75rem;font-weight:600;">Eliminar</button>
+    </div>`).join('');
+}
+function deleteCustomSticker(idx){const srv=getServer(state.currentServerId);if(!srv)return;srv.customStickers.splice(idx,1);saveServers();renderCustomStickerList(srv);}
+function handleStickerUpload(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>20*1024*1024){showToast('Archivo muy grande (máx 20MB)');return;}
+  compressImagePNG(file,256,300,b64=>{
+    const el=document.getElementById('cs-preview');
+    el.innerHTML=`<img src="${b64}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+    document.getElementById('cs-b64').value=b64;
+    const nameInput=document.getElementById('cs-name');
+    if(!nameInput.value){
+      nameInput.value=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').substring(0,32);
+      nameInput.focus();nameInput.select();
+    }
+    showToast('Imagen lista — confirma el nombre y agrega');
+  });
+}
 
 // ── INVITE ──
 function copyInviteCode(){const code=document.getElementById('invite-code-text').textContent;navigator.clipboard.writeText(code).then(()=>showToast('✅ Código copiado'));}
@@ -3861,14 +3955,14 @@ let _recentEmojis=[];try{_recentEmojis=JSON.parse(localStorage.getItem('nova_rec
 function addRecentEmoji(e){_recentEmojis=[e,..._recentEmojis.filter(x=>x!==e)].slice(0,24);try{localStorage.setItem('nova_recent_emojis',JSON.stringify(_recentEmojis));}catch(e){}savePref({recentEmojis:_recentEmojis});}
 
 const EMOJI_CATS={
-  '🔥 Popular':['🔥','💯','✅','⚡','🎉','🚀','💎','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>','🌟','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 20h14"/></svg>','💫','🎯','🎮','🎵','🍕','🍔','☕','🎂','🌈','❄️','🌊','🌺','🍀','🦄','🐸','💀','😭','🤌','💅','🫡','🥺','😤','🤡','🎃','🫶','🥹'],
-  '😀 Caras':['😀','😃','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘','☺️','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
+  '🔥 Popular':['🔥','💯','✅','⚡','🎉','🚀','💎','🏆','🌟','⭐','💫','🎯','🎮','🎵','🍕','🍔','☕','🎂','🌈','❄️','🌊','🌺','🍀','🦄','🐸','💀','😭','🤌','💅','🫡','🥺','😤','🤡','🎃','🫶','🥹'],
+  '😀 Caras':['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘','☺️','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
   '👋 Gestos':['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','👀','👅','👄'],
   '🐶 Animales':['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐴','🦄','🐝','🦋','🐌','🐞','🐜','🕷️','🦂','🐢','🐍','🦎','🐙','🦑','🦐','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🦭','🐊','🐅','🐆','🦓','🐘','🦛','🦏','🐪','🦒','🦬','🐕','🐈','🐓','🦜','🦢','🕊️','🐇','🦝','🦦','🦥','🦔'],
   '🍕 Comida':['🍕','🍔','🌮','🌯','🥙','🥚','🍳','🍲','🥘','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍣','🍤','🍥','🥮','🍡','🥟','🦀','🦞','🦐','🦑','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🥛','☕','🫖','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾'],
-  '🎉 Celebración':['🎉','🎊','🎈','🎀','🎁','🎗️','🎟️','🎫','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>','🥇','🥈','🥉','🎖️','🏅','🎪','🤹','🎭','🎨','🎬','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','🧩','🎮','🕹️','🎯','🎳','🏓','🏸','🎰','🎱'],
+  '🎉 Celebración':['🎉','🎊','🎈','🎀','🎁','🎗️','🎟️','🎫','🏆','🥇','🥈','🥉','🎖️','🏅','🎪','🤹','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','🧩','🎮','🕹️','🎯','🎳','🏓','🏸','🎰','🎱'],
   '🌈 Naturaleza':['🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','☃️','⛄','🌬️','💨','🌪️','🌫️','🌊','💧','💦','🌺','🌸','🌼','🌻','🌹','🥀','🌷','🌱','🌿','☘️','🍀','🎋','🎍','🍃','🍂','🍁','🍄','🌾','💐','🌵','🎄','🌲','🌳','🌴','🪨','🪵','🌙','⭐','🌟','💫','✨','⚡','🔥','💥','🌈'],
-  '💎 Símbolos':['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✅','❌','⭕','🛑','⚠️','🔥','💯','✨','🌟','⚡','🎯','🔑','🗝️','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>','🔓','💡','<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>','🔕','🎵','🎶','💤','🚀','🛸','🌐','🔮','💎','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 20h14"/></svg>','<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>','🎪','🎨','🎭'],
+  '💎 Símbolos':['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✅','❌','⭕','🛑','⚠️','🔥','💯','✨','🌟','⚡','🎯','🔑','🗝️','🔒','🔓','💡','🔔','🔕','🎵','🎶','💤','🚀','🛸','🌐','🔮','💎','🏆','🎪','🎨','🎭'],
 };
 
 function togglePicker(mode){
@@ -3906,14 +4000,16 @@ function renderPicker(tab){
   } else if(tab==='custom'){
     const srv=getServer(state.currentServerId);const emojis=srv?.customEmojis||[];
     if(!emojis.length){
-      content.innerHTML=`<div style="text-align:center;padding:32px 16px;"><div style="font-size:2.5rem;margin-bottom:8px;">✨</div><div style="color:var(--text-2);font-size:.875rem;font-weight:600;margin-bottom:4px;">Sin emojis personalizados</div><div style="color:var(--text-3);font-size:.78rem;margin-bottom:14px;">Sube PNG o GIF animados en configuración del servidor</div><button class="btn btn-primary" style="font-size:.78rem;padding:7px 14px;" onclick="openServerSettings();closePicker();"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</button></div>`;
+      content.innerHTML=`<div style="text-align:center;padding:32px 16px;"><div style="margin-bottom:8px;display:flex;justify-content:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3);"><path d="M12 3v4M3 12h4M19 12h2M12 19v2M5.6 5.6l1.4 1.4M16.5 7.5l1.5-1.5M5.5 18.5L7 17M17 17l1.5 1.5"/><circle cx="12" cy="12" r="2.5"/></svg></div><div style="color:var(--text-2);font-size:.875rem;font-weight:600;margin-bottom:4px;">Sin emojis personalizados</div><div style="color:var(--text-3);font-size:.78rem;margin-bottom:14px;">Sube PNG o GIF animados en configuración del servidor</div><button class="btn btn-primary" style="font-size:.78rem;padding:7px 14px;" onclick="openServerSettings();closePicker();"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</button></div>`;
     } else {
       content.innerHTML=`<div class="custom-emoji-grid">${emojis.map((e,i)=>`<div class="custom-emoji-item" onclick="insertCustomEmoji(${i})" title=":${e.name}:"><img src="${e.url}" alt="${e.name}" loading="lazy"><span class="ce-label">:${e.name}:</span></div>`).join('')}</div>`;
     }
   } else if(tab==='sticker'){
-    content.innerHTML=`<div class="sticker-grid">${DEFAULT_STICKERS.map(s=>`<div class="sticker-item" onclick="sendSticker('${s.e}','${s.n}')">${s.e}<span class="sticker-label">${s.n}</span></div>`).join('')}</div>`;
+    const srvStickers=getServer(state.currentServerId)?.customStickers||[];
+    const customStickersHtml=srvStickers.length?`<div class="emoji-cat-title">Del servidor</div><div class="img-sticker-grid">${srvStickers.map((s,i)=>`<div class="img-sticker-item" onclick="sendImageSticker('${s.url}','${s.name}')" title="${s.name}"><img src="${s.url}" alt="${s.name}" loading="lazy"></div>`).join('')}</div>`:'';
+    content.innerHTML=`${customStickersHtml}<div class="emoji-cat-title">Predeterminados</div><div class="sticker-grid">${DEFAULT_STICKERS.map(s=>`<div class="sticker-item" onclick="sendSticker('${s.e}','${s.n}')">${s.e}<span class="sticker-label">${s.n}</span></div>`).join('')}</div>`;
   } else if(tab==='gif'){
-    content.innerHTML=`<div style="text-align:center;padding:32px 16px;"><div style="font-size:2.5rem;margin-bottom:8px;">🎬</div><div style="color:var(--text-2);font-size:.875rem;font-weight:600;margin-bottom:6px;">GIFs animados</div><div style="color:var(--text-3);font-size:.78rem;margin-bottom:14px;">Sube GIFs personalizados desde configuración del servidor. Los GIFs subidos aparecen en la pestaña ✨ Custom.</div><button class="btn btn-ghost" style="font-size:.78rem;" onclick="switchPickerTab('custom',document.querySelector('[data-tab=custom]'))">Ver emojis custom →</button></div>`;
+    content.innerHTML=`<div style="text-align:center;padding:32px 16px;"><div style="margin-bottom:8px;display:flex;justify-content:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3);"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="7" y1="4" x2="7" y2="9"/><line x1="17" y1="4" x2="17" y2="9"/><line x1="7" y1="15" x2="7" y2="20"/><line x1="17" y1="15" x2="17" y2="20"/></svg></div><div style="color:var(--text-2);font-size:.875rem;font-weight:600;margin-bottom:6px;">GIFs animados</div><div style="color:var(--text-3);font-size:.78rem;margin-bottom:14px;">Sube GIFs personalizados desde configuración del servidor. Los GIFs subidos aparecen en la pestaña Custom.</div><button class="btn btn-ghost" style="font-size:.78rem;" onclick="switchPickerTab('custom',document.querySelector('[data-tab=custom]'))">Ver emojis custom →</button></div>`;
   }
 }
 function filterEmojis(q){
@@ -4022,8 +4118,28 @@ function formatContent(text){
     const display=url.length>50?url.substring(0,47)+'...':url;
     return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-g);text-decoration:underline;word-break:break-all;">${display}</a>`;
   });
-  emojis.forEach(e=>{out=out.replace(new RegExp(':'+e.name+':','g'),`<img src="${e.url}" title=":${e.name}:" style="width:20px;height:20px;vertical-align:middle;">`);});
+  emojis.forEach(e=>{out=out.replace(new RegExp(':'+e.name+':','g'),`<img class="inline-emoji" src="${e.url}" title=":${e.name}:">`);});
   return out;
+}
+// Detects whether a raw message is "emoji only" (unicode emoji and/or :custom_emoji: refs, no other text)
+// so it can be rendered larger, the way Discord/WhatsApp do for emoji-only messages.
+function isEmojiOnlyContent(text){
+  if(!text)return false;
+  const t=text.trim();
+  if(!t)return false;
+  const srv=getServer(state.currentServerId);const customNames=(srv?.customEmojis||[]).map(e=>e.name);
+  // Strip all :custom_emoji: tokens that exist on this server
+  let stripped=t;
+  customNames.forEach(n=>{stripped=stripped.replace(new RegExp(':'+n+':','g'),'');});
+  // Strip unicode emoji (incl. ZWJ sequences, variation selectors, skin tones, keycaps)
+  const emojiRe=/(\p{Extended_Pictographic}|\p{Emoji_Presentation})(\u200d(\p{Extended_Pictographic}|\p{Emoji_Presentation}))*[\uFE0F\u20E3]?/gu;
+  const noEmoji=stripped.replace(emojiRe,'').replace(/\s+/g,'');
+  if(noEmoji.length>0)return false; // leftover text means it's not emoji-only
+  // Count emoji-ish "glyphs" (custom emoji tokens + unicode emoji matches) — cap like Discord (max 8 big)
+  const customCount=(t.match(/:[a-z0-9_]+:/g)||[]).filter(tok=>customNames.includes(tok.slice(1,-1))).length;
+  const unicodeMatches=stripped.match(emojiRe)||[];
+  const total=customCount+unicodeMatches.length;
+  return total>0&&total<=8;
 }
 
 // ── RESPONSIVE MOBILE ──
@@ -4662,6 +4778,20 @@ function sendMsg(msg){
 }
 
 // ── UTILS ──
+const TOAST_ICONS={
+  '⚠️':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  '✅':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  '❌':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  '🎉':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22 9 19"/><path d="M3.5 14.5 16 2l1.5 1.5L5 17z"/><path d="M14 10l5.5-5.5L21 6 15.5 11.5z"/><path d="M9 4l1.5 1.5"/><path d="M4 14l1.5 1.5"/></svg>',
+  '🎨':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',
+  '🎯':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  '📌':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',
+  '📝':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  '📨':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12.5V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.5"/><path d="M2 12.5 12 7l10 5.5"/><path d="M2 9l10 6 10-6"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>',
+  '🔄':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+  '🕐':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',
+  '🗑️':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+};
 function showToast(msg){
   let t=document.getElementById('toast');
   if(!t){
@@ -4670,7 +4800,14 @@ function showToast(msg){
     t.className='notification-toast';
     document.body.appendChild(t);
   }
-  t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),3000);
+  // Swap a recognized leading emoji for a clean SVG icon; keep custom emoji elsewhere untouched.
+  const m=msg.match(/^(\S+)\s*(.*)$/);
+  if(m&&TOAST_ICONS[m[1]]){
+    t.innerHTML=`<span style="display:inline-flex;vertical-align:-2px;margin-right:6px;">${TOAST_ICONS[m[1]]}</span>${m[2].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}`;
+  }else{
+    t.textContent=msg;
+  }
+  t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),3000);
 }
 function updateOnlineCount(){
   const el=document.getElementById('online-count');if(!el)return;
@@ -4852,13 +4989,13 @@ function openUserStats() {
     document.getElementById('user-stats-content').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         ${[
-          ['💬','Mensajes enviados', s.messages || 0],
-          ['👍','Reacciones dadas', s.reactions || 0],
-          ['🔥','Racha de días', (s.streak || 0) + ' días'],
-          ['📅','Activo desde', s.joinedDate ? new Date(s.joinedDate).toLocaleDateString('es') : 'hoy'],
+          ['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>','Mensajes enviados', s.messages || 0],
+          ['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>','Reacciones dadas', s.reactions || 0],
+          ['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>','Racha de días', (s.streak || 0) + ' días'],
+          ['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>','Activo desde', s.joinedDate ? new Date(s.joinedDate).toLocaleDateString('es') : 'hoy'],
         ].map(([ico,label,val]) => `
           <div style="background:var(--bg-3);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:1.6rem;margin-bottom:4px;">${ico}</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--accent);">${ico}</div>
             <div style="font-size:1.2rem;font-weight:800;color:var(--text-0);">${val}</div>
             <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">${label}</div>
           </div>`).join('')}
@@ -5397,7 +5534,7 @@ function renderNovaSection(srv) {
         <button class="btn btn-ghost btn-sm" onclick="closeModal('server-settings-modal');openUserStats()">📊 Mis estadísticas</button>
         <button class="btn btn-ghost btn-sm" onclick="closeModal('server-settings-modal');openFocusMode()">🎯 Modo enfoque</button>
         <button class="btn btn-ghost btn-sm" onclick="closeModal('server-settings-modal');openGlobalSearch()">🔍 Búsqueda global</button>
-        <button class="btn btn-ghost btn-sm" onclick="closeModal('server-settings-modal');openScheduledMessage()">🕐 Programar mensaje</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('server-settings-modal');openScheduledMessage()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>Programar mensaje</button>
       </div>
     </div>
   `;
@@ -5503,7 +5640,7 @@ window.openSsSection = function(section, btn) {
 <!-- ══ SCHEDULED MESSAGES MODAL ══ -->
 <div class="modal-overlay" id="scheduled-modal" onclick="if(event.target===this)closeModal('scheduled-modal')" style="z-index:1100;">
   <div class="modal" style="max-width:480px;">
-    <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:4px;">🕐 Mensaje Programado</h3>
+    <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>Mensaje Programado</h3>
     <p style="color:var(--text-2);font-size:.82rem;margin-bottom:16px;">El mensaje se enviará automáticamente en la fecha y hora indicada.</p>
     <label style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);">Mensaje</label>
     <textarea id="scheduled-msg-text" rows="3" placeholder="Escribe tu mensaje..." style="width:100%;margin-top:6px;background:var(--bg-3);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text-0);font-family:var(--font);font-size:.875rem;resize:none;outline:none;box-sizing:border-box;"></textarea>
