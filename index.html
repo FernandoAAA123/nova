@@ -142,6 +142,7 @@ select option{background:var(--bg-3);color:var(--text-0);}
 
 /* SERVER BAR — cuadrados redondeados, no círculos */
 #server-bar{width:var(--sidebar-w);background:var(--bg-0);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;overflow-y:auto;flex-shrink:0;border-right:1px solid var(--border);}
+#server-icons-list{display:flex;flex-direction:column;align-items:center;gap:2px;}
 .server-icon{width:44px;height:44px;border-radius:14px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.15rem;font-weight:700;color:var(--text-2);transition:border-radius .2s,background .15s,box-shadow .15s;position:relative;flex-shrink:0;overflow:hidden;user-select:none;border:1.5px solid transparent;}
 .server-icon:hover{border-radius:12px;background:var(--bg-4);border-color:var(--border);}
 .server-icon.active{border-radius:12px;background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 16px var(--accent-glow);}
@@ -426,6 +427,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
 /* THEME BAR — hidden, moved to settings */
 #theme-bar{display:none;}
 .live-badge{position:fixed;top:12px;right:16px;z-index:999;}
+#server-bar-toggle{display:none;}
 /* ══ SCROLLBARS ══ */
 *{scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent;}
 *::-webkit-scrollbar{width:4px;height:4px;}
@@ -453,10 +455,29 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     overflow-x:auto;overflow-y:hidden;
     gap:4px;
     scrollbar-width:none;
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
   }
   #server-bar::-webkit-scrollbar{display:none;}
   #server-bar .server-sep{width:1px;height:28px;margin:0 4px;flex-shrink:0;}
   #server-bar .server-icon{flex-shrink:0;}
+  #server-icons-list{flex-direction:row;align-items:center;gap:4px;}
+
+  /* Toggle button to hide/show the server bar — mobile only */
+  #server-bar-toggle{
+    display:flex;align-items:center;justify-content:center;
+    position:fixed;right:10px;bottom:66px;
+    width:30px;height:30px;border-radius:50%;
+    background:var(--bg-3);border:1px solid var(--border);
+    color:var(--text-2);z-index:201;cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+    transition:bottom .25s cubic-bezier(.4,0,.2,1);
+  }
+  body.server-bar-hidden #server-bar{transform:translateY(100%);}
+  body.server-bar-hidden #server-bar-toggle{bottom:10px;}
+  body.server-bar-hidden #chat-area{bottom:0;}
+  body.server-bar-hidden #channels-panel{bottom:0;}
+  body.server-bar-hidden #mobile-overlay{bottom:0;}
+  body.server-bar-hidden .notification-toast{bottom:14px;}
 
   /* Slide-in sidebar (channels panel) */
   #channels-panel{
@@ -557,8 +578,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   /* Toast position */
   .notification-toast{bottom:70px;right:12px;left:12px;max-width:none;text-align:center;}
 
-  /* Live badge */
-  .live-badge{top:auto;bottom:68px;right:10px;}
+  /* Live badge — moved below header so it never overlaps the input bar */
+  .live-badge{top:50px;bottom:auto;right:8px;}
 
   /* Message hover actions — always visible on touch */
   .msg-hover-actions{display:flex;position:relative;right:auto;top:auto;margin-top:4px;background:none;border:none;box-shadow:none;padding:0;}
@@ -781,6 +802,9 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     <div class="server-sep"></div>
     <div class="server-icon" id="add-server-btn" title="Nueva comunidad" onclick="toggleAddServerMenu(event)">＋</div>
   </div>
+  <button id="server-bar-toggle" onclick="toggleServerBarMobile()" title="Ocultar/mostrar servidores">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
   <div id="channels-panel">
     <div id="channels-header">
       <span id="server-name" onclick="openServerSettings()">Mensajes Directos</span>
@@ -1384,9 +1408,12 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <div class="ss-section" id="ss-sec-channels">
         <div class="ss-section-header">
           <h2 class="ss-section-title">Canales</h2>
-          <p class="ss-section-desc">Gestiona los canales de texto, voz y anuncios.</p>
+          <p class="ss-section-desc">Gestiona los canales de texto, voz y anuncios. Arrastra para reordenar.</p>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddChannelModal()">＋ Crear canal</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="openAddChannelModal()">＋ Crear canal</button>
+          <button class="btn btn-ghost btn-sm" onclick="createCategory(state.currentServerId)">＋ Nueva categoría</button>
+        </div>
         <div id="ss-channels-list" style="margin-top:16px;"></div>
       </div>
 
@@ -2109,6 +2136,12 @@ function updateUserBar(){
   if(u.avatarUrl){ava.innerHTML=`<img src="${u.avatarUrl}" onerror="this.style.display='none'"><div class="user-status-dot" style="background:${STATUS_COLORS[u.status]||STATUS_COLORS.online}"></div>`;}
   else{ava.innerHTML=`<span>${u.name[0].toUpperCase()}</span><div class="user-status-dot" style="background:${STATUS_COLORS[u.status]||STATUS_COLORS.online}"></div>`;}
 }
+function toggleServerBarMobile(){
+  const hidden=document.body.classList.toggle('server-bar-hidden');
+  document.getElementById('server-bar-toggle').innerHTML=hidden
+    ?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>'
+    :'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+}
 function renderServerBar(){
   const el=document.getElementById('server-icons-list');el.innerHTML='';
   const uid=state.currentUser?.uid;
@@ -2257,14 +2290,6 @@ function renderChannelsPanel(){
     });
     list.appendChild(group);
   });
-  if(isServerAdmin(srv)){
-    const addCatBtn=document.createElement('div');
-    addCatBtn.className='channel-group-header';
-    addCatBtn.style.cssText='cursor:pointer;margin-top:4px;';
-    addCatBtn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva categoría`;
-    addCatBtn.onclick=()=>createCategory(srv.id);
-    list.appendChild(addCatBtn);
-  }
 }
 function renderChatArea(){
   const isDM=state.currentServerId==='__dm__';
@@ -2380,9 +2405,13 @@ function renderForumPosts(ch){
       <div style="font-size:.85rem;color:var(--text-2);">${posts.length} publicacion${posts.length!==1?'es':''}</div>
       <button class="btn btn-primary btn-sm" onclick="openNewForumPost('${ch.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Nueva publicación</button>
     </div>
-    ${posts.length?posts.map(p=>`
-      <div onclick="openForumPost('${ch.id}','${p.id}')" style="background:var(--bg-3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:8px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    ${posts.length?posts.map(p=>{
+      const srvA=getServer(state.currentServerId);
+      const canDel=p.uid===state.currentUser?.uid||isServerAdmin(srvA);
+      return`
+      <div onclick="openForumPost('${ch.id}','${p.id}')" style="background:var(--bg-3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:8px;cursor:pointer;transition:all .15s;position:relative;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
         ${p.coverImg?`<img src="${p.coverImg}" alt="" style="width:100%;height:140px;object-fit:cover;display:block;">`:''}
+        ${canDel?`<button onclick="event.stopPropagation();deleteForumPost('${ch.id}','${p.id}')" title="Eliminar" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
         <div style="padding:16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
           <div style="width:28px;height:28px;border-radius:8px;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;">${(p.name||'?')[0].toUpperCase()}</div>
@@ -2397,7 +2426,7 @@ function renderForumPosts(ch){
           ${p.reactions?.length?`<span style="display:inline-flex;align-items:center;gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> ${p.reactions.reduce((s,r)=>s+(r.users?.length||0),0)}</span>`:''}
         </div>
         </div>
-      </div>`).join('')
+      </div>`}).join('')
     :'<div class="empty-state" style="margin-top:40px;"><div class="big-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><h3>Sin publicaciones aún</h3><p style="color:var(--text-3);font-size:.85rem;margin-top:6px;">Sé el primero en crear una publicación</p></div>'}`;
 }
 
@@ -2423,20 +2452,34 @@ function openForumPost(chId, postId){
   document.getElementById('chat-channel-name').innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> ${post.title||post.content?.substring(0,30)||'Post'}
     <button onclick="backToForum('${chId}')" style="margin-left:8px;background:var(--bg-4);border:none;color:var(--text-2);cursor:pointer;border-radius:6px;padding:2px 8px;font-size:.72rem;">← Foro</button>`;
   renderMessages();
-  // Show the original post (title, content, cover image) above its replies
-  const el=document.getElementById('messages');
-  const header=document.createElement('div');
-  header.style.cssText='border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:16px;';
-  header.innerHTML=`
+}
+function buildForumPostHeader(){
+  if(!state._forumChannelId)return'';
+  const post=(state.messages[state._forumChannelId]||[]).find(m=>m.id===state.currentChannelId);
+  if(!post)return'';
+  const srv=getServer(state.currentServerId);
+  const canDelete=post.uid===state.currentUser?.uid||isServerAdmin(srv);
+  return`<div style="border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:16px;position:relative;">
+    ${canDelete?`<button onclick="deleteForumPost('${state._forumChannelId}','${post.id}')" title="Eliminar publicación" style="position:absolute;top:0;right:0;background:rgba(244,63,94,.12);border:none;color:var(--red);cursor:pointer;border-radius:6px;padding:5px 9px;font-size:.72rem;display:flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar</button>`:''}
     ${post.coverImg?`<img src="${post.coverImg}" alt="" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-bottom:12px;cursor:zoom-in;" onclick="openImageLightbox('${post.coverImg}')">`:''}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
       <div style="width:28px;height:28px;border-radius:8px;background:${post.color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;">${(post.name||'?')[0].toUpperCase()}</div>
       <span style="font-size:.8rem;font-weight:600;color:${post.color}">${post.name}</span>
       <span style="font-size:.72rem;color:var(--text-3);">${fmtDateTime(post.ts)}</span>
     </div>
-    <div style="font-size:1.1rem;font-weight:700;color:var(--text-0);margin-bottom:6px;">${post.title||'Sin título'}</div>
-    <div style="font-size:.9rem;color:var(--text-1);line-height:1.6;white-space:pre-wrap;">${formatContent(post.content||'')}</div>`;
-  el.insertBefore(header,el.firstChild);
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text-0);margin-bottom:6px;padding-right:80px;">${post.title||'Sin título'}</div>
+    <div style="font-size:.9rem;color:var(--text-1);line-height:1.6;white-space:pre-wrap;">${formatContent(post.content||'')}</div>
+  </div>`;
+}
+function deleteForumPost(chId,postId){
+  if(!confirm('¿Eliminar esta publicación? También se borrarán sus respuestas.'))return;
+  if(state.messages[chId])state.messages[chId]=state.messages[chId].filter(m=>m.id!==postId);
+  delete state.messages[postId];
+  fbRemove('state/messages/'+chId+'/'+postId);
+  fbRemove('state/messages/'+postId);
+  state._forumChannelId=null;
+  backToForum(chId);
+  showToast('🗑️ Publicación eliminada');
 }
 function openImageLightbox(url){
   const overlay=document.createElement('div');
@@ -2457,8 +2500,9 @@ function backToForum(chId){
 function renderMessages(){
   const el=document.getElementById('messages');
   const msgs=state.messages[state.currentChannelId]||[];
-  if(!msgs.length){el.innerHTML='<div class="empty-state"><div class="big-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>¡Sé el primero en escribir!</h3></div>';return;}
-  el.innerHTML='';
+  const forumHeader=buildForumPostHeader();
+  if(!msgs.length){el.innerHTML=forumHeader+'<div class="empty-state"><div class="big-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>¡Sé el primero en escribir!</h3></div>';return;}
+  el.innerHTML=forumHeader;
   let prevUid=null,prevTs=0;
   msgs.forEach(msg=>{
     if(msg.deleted)return;
@@ -2844,7 +2888,7 @@ function showFriendCtx(e,uid){
 
 // ── CHANNELS ──
 function selectChannel(id){
-  state.currentChannelId=id;state.unreadCounts[id]=0;
+  state.currentChannelId=id;state.unreadCounts[id]=0;state._forumChannelId=null;
   subscribeChannel(id);renderChannelsPanel();renderChatArea();
   savePref({lastChannel:id});
 }
@@ -2878,6 +2922,7 @@ function createCategory(srvId){
   const cat={id:'cat'+genId(8),name:'NUEVA CATEGORÍA',type:'category',children:[]};
   srv.channels.push(cat);
   saveServers();renderChannelsPanel();
+  if(document.getElementById('ss-sec-channels')?.classList.contains('active'))renderSsChannels(srv);
   editCategory(cat.id);
 }
 function editCategory(catId){
@@ -2907,7 +2952,7 @@ function editCategory(catId){
         if(!cat)return;
         cat.name=name;
         if(b64)cat.icon=b64;else if(b64==='')cat.icon='';
-        saveServers();renderChannelsPanel();showToast('✅ Categoría actualizada');
+        saveServers();renderChannelsPanel();if(document.getElementById('ss-sec-channels')?.classList.contains('active'))renderSsChannels(srv);showToast('✅ Categoría actualizada');
         document.querySelector('[style*=fixed][style*=backdrop]').remove();
       })()">Guardar</button>
     </div>
@@ -3095,16 +3140,54 @@ function renderSsMembers(srv){
 function renderSsChannels(srv){
   const el=document.getElementById('ss-channels-list');if(!el)return;
   el.innerHTML='';
-  (srv.channels||[]).forEach(cat=>{
+  const admin=isServerAdmin(srv);
+  (srv.channels||[]).forEach((cat,catIdx)=>{
     const catDiv=document.createElement('div');
     catDiv.style.cssText='margin-bottom:16px;';
-    catDiv.innerHTML=`<div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">${cat.name}</div>`;
-    (cat.children||[]).forEach(ch=>{
+    catDiv.draggable=admin;
+    const head=document.createElement('div');
+    head.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:8px;'+(admin?'cursor:grab;':'');
+    head.innerHTML=`${admin?'<span style="color:var(--text-3);opacity:.5;font-size:.8rem;">⠿</span>':''}<span style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);flex:1;">${cat.name}</span>${admin?`<button onclick="editCategory('${cat.id}')" title="Editar categoría" style="background:none;border:none;color:var(--text-3);cursor:pointer;padding:2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`:''}`;
+    catDiv.appendChild(head);
+    (cat.children||[]).forEach((ch,chIdx)=>{
       const row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-3);border-radius:var(--r-xs);margin-bottom:4px;';
-      row.innerHTML=`<span style="color:var(--text-3);">${CHAN_ICONS[ch.type]||'#'}</span><span style="flex:1;font-size:.875rem;color:var(--text-1);">${ch.name}</span>${isServerAdmin(srv)?`<button class="btn btn-ghost btn-sm" onclick="deleteChannel('${ch.id}','${srv.id}');renderSsChannels(getServer(state.currentServerId))"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}`;
+      row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border-radius:var(--r-xs);margin-bottom:4px;'+(admin?'cursor:grab;':'');
+      row.draggable=admin;
+      row.innerHTML=`${admin?'<span style="color:var(--text-3);opacity:.5;font-size:.78rem;">⠿</span>':''}<span style="color:var(--text-3);">${CHAN_ICONS[ch.type]||'#'}</span><span style="flex:1;font-size:.875rem;color:var(--text-1);">${ch.name}</span>${admin?`<button class="btn btn-ghost btn-sm" onclick="openEditChannel('${ch.id}','${srv.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn btn-ghost btn-sm" onclick="deleteChannel('${ch.id}','${srv.id}');renderSsChannels(getServer(state.currentServerId))" title="Eliminar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}`;
+      if(admin){
+        row.addEventListener('dragstart',e=>{e.stopPropagation();e.dataTransfer.setData('type','ss-ch');e.dataTransfer.setData('catIdx',catIdx);e.dataTransfer.setData('chIdx',chIdx);row.style.opacity='.4';});
+        row.addEventListener('dragend',()=>row.style.opacity='');
+        row.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();row.style.outline='1px solid var(--accent)';});
+        row.addEventListener('dragleave',()=>row.style.outline='');
+        row.addEventListener('drop',e=>{
+          e.preventDefault();e.stopPropagation();row.style.outline='';
+          if(e.dataTransfer.getData('type')!=='ss-ch')return;
+          const fromCatIdx=parseInt(e.dataTransfer.getData('catIdx'));
+          const fromChIdx=parseInt(e.dataTransfer.getData('chIdx'));
+          if(fromCatIdx===catIdx&&fromChIdx===chIdx)return;
+          const srcCat=srv.channels[fromCatIdx];if(!srcCat)return;
+          const [moved]=srcCat.children.splice(fromChIdx,1);
+          cat.children.splice(chIdx,0,moved);
+          saveServers();renderSsChannels(srv);renderChannelsPanel();
+        });
+      }
       catDiv.appendChild(row);
     });
+    if(admin){
+      catDiv.addEventListener('dragstart',e=>{if(e.target!==catDiv)return;e.dataTransfer.setData('type','ss-cat');e.dataTransfer.setData('catIdx',catIdx);catDiv.style.opacity='.4';});
+      catDiv.addEventListener('dragend',()=>catDiv.style.opacity='');
+      catDiv.addEventListener('dragover',e=>{e.preventDefault();catDiv.style.outline='1px dashed var(--accent)';});
+      catDiv.addEventListener('dragleave',()=>catDiv.style.outline='');
+      catDiv.addEventListener('drop',e=>{
+        e.preventDefault();catDiv.style.outline='';
+        if(e.dataTransfer.getData('type')!=='ss-cat')return;
+        const fromCatIdx=parseInt(e.dataTransfer.getData('catIdx'));
+        if(fromCatIdx===catIdx)return;
+        const [moved]=srv.channels.splice(fromCatIdx,1);
+        srv.channels.splice(catIdx,0,moved);
+        saveServers();renderSsChannels(srv);renderChannelsPanel();
+      });
+    }
     el.appendChild(catDiv);
   });
 }
