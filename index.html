@@ -2824,7 +2824,7 @@ function sendImageUrl(){
   const msg={id:'msg'+genId(12),uid:u.uid,name:u.name,color:u.avatarColor,avatarUrl:u.avatarUrl||'',content:'',imageUrl:url,ts:Date.now(),reactions:[],pinned:false,edited:false};
   fbSet('state/messages/'+state.currentChannelId+'/'+msg.id,msg);
   if(!state.messages[state.currentChannelId])state.messages[state.currentChannelId]=[];
-  state.messages[state.currentChannelId].push(msg);
+  if(!state.messages[state.currentChannelId].find(m=>m.id===msg.id))state.messages[state.currentChannelId].push(msg);
   renderMessages();closeModal('image-url-modal');document.getElementById('image-url-input').value='';
 }
 function deleteMsg(id){
@@ -2886,7 +2886,7 @@ function sendSticker(e,n){
   if(isDM){fbSet('dmMessages/'+state.currentChannelId.replace('dm_','')+'/'+msg.id,msg);}
   else{fbSet('state/messages/'+state.currentChannelId+'/'+msg.id,msg);}
   if(!state.messages[state.currentChannelId])state.messages[state.currentChannelId]=[];
-  state.messages[state.currentChannelId].push(msg);
+  if(!state.messages[state.currentChannelId].find(m=>m.id===msg.id))state.messages[state.currentChannelId].push(msg);
   renderMessages();closePicker();
 }
 function sendImageSticker(url,name){
@@ -2897,7 +2897,7 @@ function sendImageSticker(url,name){
   if(isDM){fbSet('dmMessages/'+state.currentChannelId.replace('dm_','')+'/'+msg.id,msg);}
   else{fbSet('state/messages/'+state.currentChannelId+'/'+msg.id,msg);}
   if(!state.messages[state.currentChannelId])state.messages[state.currentChannelId]=[];
-  state.messages[state.currentChannelId].push(msg);
+  if(!state.messages[state.currentChannelId].find(m=>m.id===msg.id))state.messages[state.currentChannelId].push(msg);
   renderMessages();closePicker();
 }
 
@@ -3684,7 +3684,7 @@ function addCustomEmoji(){
   if(!b64){showToast('⚠️ Sube una imagen primero');return;}
   const srv=getServer(state.currentServerId);if(!srv)return;
   if(!srv.customEmojis)srv.customEmojis=[];
-  if(srv.customEmojis.length>=50){showToast('⚠️ Máximo 50 emojis por servidor');return;}
+  if(srv.customEmojis.length>=100){showToast('⚠️ Máximo 100 emojis por servidor');return;}
   srv.customEmojis.push({name,url:b64,uploadedBy:state.currentUser?.name||'?',uploadedAt:Date.now()});
   saveServers();
   document.getElementById('ce-name').value='';
