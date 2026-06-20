@@ -224,7 +224,7 @@ select option{background:var(--bg-3);color:var(--text-0);}
 .msg-mine .msg-group{background:rgba(124,58,237,.04);border-radius:var(--r-sm);padding:6px 8px;margin:14px -8px 0;}
 .msg-wrap{position:relative;padding:1px 8px;border-radius:var(--r-sm);transition:background .1s;}
 .msg-wrap:hover{background:rgba(255,255,255,.03);}
-.msg-continuation{padding-left:48px;}
+.msg-continuation{display:flex;align-items:flex-start;gap:12px;padding-left:0;}
 .cont-time{font-size:.62rem;color:transparent;width:36px;flex-shrink:0;text-align:right;padding-top:3px;transition:color .1s;}
 .msg-wrap:hover .cont-time{color:var(--text-3);}
 .msg-hover-actions{display:none;position:absolute;right:10px;top:-14px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px 5px;gap:2px;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.3);}
@@ -630,7 +630,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   .msg-group{gap:8px;margin-top:14px;}
   .msg-avatar{width:30px;height:30px;border-radius:8px;}
   .msg-content{font-size:.875rem;}
-  .msg-continuation{padding-left:38px;}
+  .msg-continuation{gap:8px;}
+  .cont-time{width:30px;}
 
   /* Input */
   #input-area{padding:0 6px 8px;}
