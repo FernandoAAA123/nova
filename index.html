@@ -1094,7 +1094,6 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
         <div style="position:relative;flex:1;"><span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:.95rem;pointer-events:none;">@</span><input type="text" id="us-handle" placeholder="tu_handle" style="padding-left:24px;" oninput="checkHandleAvailability(this.value)"></div>
         <span id="handle-status" style="font-size:.78rem;flex-shrink:0;min-width:70px;"></span>
       </div>
-      <label>Nombre para mostrar</label><input type="text" id="us-displayname" placeholder="Nombre visible en servidores">
       <label>Biografía</label><textarea id="us-bio" placeholder="Cuéntanos algo sobre ti..." rows="3" style="resize:vertical;min-height:60px;"></textarea>
       <label>Estado personalizado</label><input type="text" id="us-status" placeholder="¿Qué estás haciendo?">
       <label>Presencia</label>
@@ -1104,17 +1103,6 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
         <option value="dnd">🔴 No molestar</option>
         <option value="offline">⚫ Invisible</option>
       </select>
-      <label>Color de avatar (si no hay foto)</label>
-      <div class="color-picker-row" id="us-color-row">
-        <div class="color-dot selected" style="background:#7c3aed" data-color="#7c3aed" onclick="selectAvatarColor(this)"></div>
-        <div class="color-dot" style="background:#ec4899" data-color="#ec4899" onclick="selectAvatarColor(this)"></div>
-        <div class="color-dot" style="background:#10b981" data-color="#10b981" onclick="selectAvatarColor(this)"></div>
-        <div class="color-dot" style="background:#f59e0b" data-color="#f59e0b" onclick="selectAvatarColor(this)"></div>
-        <div class="color-dot" style="background:#f43f5e" data-color="#f43f5e" onclick="selectAvatarColor(this)"></div>
-        <div class="color-dot" style="background:#3b82f6" data-color="#3b82f6" onclick="selectAvatarColor(this)"></div>
-        <div class="color-dot" style="background:#eb7d34" data-color="#eb7d34" onclick="selectAvatarColor(this)"></div>
-        <input type="color" value="#7c3aed" onchange="state.avatarSelectedColor=this.value">
-      </div>
       <label>Redes sociales <span style="color:var(--text-3);font-size:.75rem;">(hasta 6 enlaces)</span></label>
       <div style="display:flex;flex-direction:column;gap:6px;" id="us-socials-list">
         <input type="text" class="us-social-link" placeholder="https://... o @usuario">
@@ -1343,8 +1331,7 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
               <div>
                 <button class="btn btn-primary btn-sm" onclick="document.getElementById('ss-server-icon-file').click()">Cambiar ícono</button>
                 <button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="clearServerIcon()">Eliminar ícono</button>
-                <div style="font-size:.72rem;color:var(--text-3);margin-top:6px;">O usa un emoji:</div>
-                <input type="text" id="ss-server-icon" maxlength="2" placeholder="🎮" style="width:60px;margin-top:4px;" oninput="previewServerIconEmoji(this.value,'ss-server-icon-preview')">
+                <input type="hidden" id="ss-server-icon">
               </div>
             </div>
             <input type="file" id="ss-server-icon-file" accept="image/*" style="display:none" onchange="handleServerIconUpload(this,'ss-server-icon-preview','ss-server-icon-b64')">
@@ -1661,15 +1648,6 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     </select>
     <label>Tema / Descripción</label>
     <input type="text" id="edit-ch-topic" placeholder="¿De qué trata este canal?">
-    <div id="edit-ch-forum-cover" style="display:none;margin-top:12px;">
-      <label>Imagen de portada del foro</label>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
-        <div id="edit-ch-cover-prev" style="width:80px;height:50px;border-radius:8px;background:var(--bg-4);overflow:hidden;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.5rem;" onclick="document.getElementById('edit-ch-cover-file').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-        <input type="file" id="edit-ch-cover-file" accept="image/*" style="display:none" onchange="handleImgUpload(this,'edit-ch-cover-prev','edit-ch-cover-b64',600,200)">
-        <input type="hidden" id="edit-ch-cover-b64">
-        <div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('edit-ch-cover-file').click()">Cambiar</button><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="document.getElementById('edit-ch-cover-prev').innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';document.getElementById('edit-ch-cover-b64').value='__clear__'">Quitar</button></div>
-      </div>
-    </div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
       <div class="toggle" id="edit-ch-private" onclick="this.classList.toggle('on')"></div>
       <span style="font-size:.875rem;color:var(--text-1);">Canal privado</span>
@@ -2272,6 +2250,14 @@ function renderChannelsPanel(){
     });
     list.appendChild(group);
   });
+  if(isServerAdmin(srv)){
+    const addCatBtn=document.createElement('div');
+    addCatBtn.className='channel-group-header';
+    addCatBtn.style.cssText='cursor:pointer;margin-top:4px;';
+    addCatBtn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva categoría`;
+    addCatBtn.onclick=()=>createCategory(srv.id);
+    list.appendChild(addCatBtn);
+  }
 }
 function renderChatArea(){
   const isDM=state.currentServerId==='__dm__';
@@ -2388,7 +2374,9 @@ function renderForumPosts(ch){
       <button class="btn btn-primary btn-sm" onclick="openNewForumPost('${ch.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Nueva publicación</button>
     </div>
     ${posts.length?posts.map(p=>`
-      <div onclick="openForumPost('${ch.id}','${p.id}')" style="background:var(--bg-3);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:8px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div onclick="openForumPost('${ch.id}','${p.id}')" style="background:var(--bg-3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:8px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        ${p.coverImg?`<img src="${p.coverImg}" alt="" style="width:100%;height:140px;object-fit:cover;display:block;">`:''}
+        <div style="padding:16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
           <div style="width:28px;height:28px;border-radius:8px;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;">${(p.name||'?')[0].toUpperCase()}</div>
           <span style="font-size:.8rem;font-weight:600;color:${p.color}">${p.name}</span>
@@ -2400,6 +2388,7 @@ function renderForumPosts(ch){
         <div style="display:flex;gap:12px;margin-top:10px;font-size:.75rem;color:var(--text-3);">
           <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${(state.messages[p.id]||[]).length} respuestas</span>
           ${p.reactions?.length?`<span style="display:inline-flex;align-items:center;gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> ${p.reactions.reduce((s,r)=>s+(r.users?.length||0),0)}</span>`:''}
+        </div>
         </div>
       </div>`).join('')
     :'<div class="empty-state" style="margin-top:40px;"><div class="big-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><h3>Sin publicaciones aún</h3><p style="color:var(--text-3);font-size:.85rem;margin-top:6px;">Sé el primero en crear una publicación</p></div>'}`;
@@ -2427,6 +2416,27 @@ function openForumPost(chId, postId){
   document.getElementById('chat-channel-name').innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> ${post.title||post.content?.substring(0,30)||'Post'}
     <button onclick="backToForum('${chId}')" style="margin-left:8px;background:var(--bg-4);border:none;color:var(--text-2);cursor:pointer;border-radius:6px;padding:2px 8px;font-size:.72rem;">← Foro</button>`;
   renderMessages();
+  // Show the original post (title, content, cover image) above its replies
+  const el=document.getElementById('messages');
+  const header=document.createElement('div');
+  header.style.cssText='border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:16px;';
+  header.innerHTML=`
+    ${post.coverImg?`<img src="${post.coverImg}" alt="" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-bottom:12px;cursor:zoom-in;" onclick="openImageLightbox('${post.coverImg}')">`:''}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:${post.color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;">${(post.name||'?')[0].toUpperCase()}</div>
+      <span style="font-size:.8rem;font-weight:600;color:${post.color}">${post.name}</span>
+      <span style="font-size:.72rem;color:var(--text-3);">${fmtDateTime(post.ts)}</span>
+    </div>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text-0);margin-bottom:6px;">${post.title||'Sin título'}</div>
+    <div style="font-size:.9rem;color:var(--text-1);line-height:1.6;white-space:pre-wrap;">${formatContent(post.content||'')}</div>`;
+  el.insertBefore(header,el.firstChild);
+}
+function openImageLightbox(url){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  overlay.innerHTML=`<img src="${url}" style="max-width:90vw;max-height:90vh;border-radius:var(--r-sm);box-shadow:0 20px 60px rgba(0,0,0,.5);">`;
+  overlay.onclick=()=>overlay.remove();
+  document.body.appendChild(overlay);
 }
 
 function backToForum(chId){
@@ -2514,6 +2524,7 @@ function mediaHtml(msg){
   }
   if(msg.imageData)return`<br><img class="msg-img" src="${msg.imageData}" alt="img" onclick="openImgViewer('${msg.id}')" style="cursor:zoom-in;">`;
   if(msg.imageUrl)return`<br><img class="msg-img" src="${msg.imageUrl}" alt="img" onclick="window.open('${msg.imageUrl}','_blank')" onerror="this.style.display='none'">`;
+  if(msg.coverImg)return`<br><img class="msg-img" src="${msg.coverImg}" alt="img" onclick="openImgViewer('${msg.id}')" style="cursor:zoom-in;">`;
   if(msg.audioData)return`<br><audio controls src="${msg.audioData}" style="margin-top:6px;max-width:280px;border-radius:var(--r-sm);"></audio>`;
   if(msg.stickerUrl)return`<img src="${msg.stickerUrl}" alt="${msg.sticker||'sticker'}" style="width:140px;height:140px;object-fit:contain;margin-top:4px;display:block;">`;
   if(msg.sticker)return`<div style="font-size:3rem;margin-top:4px;">${msg.sticker}</div>`;
@@ -2552,10 +2563,12 @@ function extractYouTubeId(text){
 }
 function openImgViewer(msgId){
   const msgs=state.messages[state.currentChannelId]||[];
-  const msg=msgs.find(m=>m.id===msgId);if(!msg||!msg.imageData)return;
+  const msg=msgs.find(m=>m.id===msgId);
+  const src=msg?.imageData||msg?.coverImg;
+  if(!msg||!src)return;
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-  overlay.innerHTML=`<img src="${msg.imageData}" style="max-width:90vw;max-height:90vh;border-radius:var(--r-sm);box-shadow:0 20px 60px rgba(0,0,0,.5);">`;
+  overlay.innerHTML=`<img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:var(--r-sm);box-shadow:0 20px 60px rgba(0,0,0,.5);">`;
   overlay.onclick=()=>overlay.remove();
   document.body.appendChild(overlay);
 }
@@ -2852,6 +2865,14 @@ function createChannel(){
   saveServers();closeModal('add-channel-modal');selectChannel(ch.id);showToast('✅ Canal #'+name+' creado');
 }
 // ── CATEGORY EDITOR ──
+function createCategory(srvId){
+  const srv=getServer(srvId);if(!srv)return;
+  if(!srv.channels)srv.channels=[];
+  const cat={id:'cat'+genId(8),name:'NUEVA CATEGORÍA',type:'category',children:[]};
+  srv.channels.push(cat);
+  saveServers();renderChannelsPanel();
+  editCategory(cat.id);
+}
 function editCategory(catId){
   const srv=getServer(state.currentServerId);if(!srv)return;
   const cat=srv.channels.find(c=>c.id===catId);if(!cat)return;
@@ -2902,15 +2923,6 @@ function openEditChannel(chId, srvId){
   document.getElementById('edit-ch-topic').value=ch.topic||'';
   const tog=document.getElementById('edit-ch-private');
   ch.private?tog.classList.add('on'):tog.classList.remove('on');
-  // Forum cover
-  const coverSection=document.getElementById('edit-ch-forum-cover');
-  coverSection.style.display=ch.type==='forum'?'':'none';
-  document.getElementById('edit-ch-cover-b64').value='';
-  const coverPrev=document.getElementById('edit-ch-cover-prev');
-  if(ch.coverImg){coverPrev.innerHTML=`<img src="${ch.coverImg}" style="width:100%;height:100%;object-fit:cover;">`;}
-  else{coverPrev.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';}
-  // Show/hide cover on type change
-  document.getElementById('edit-ch-type').onchange=function(){coverSection.style.display=this.value==='forum'?'':'none';};
   openModal('edit-channel-modal');
 }
 function saveEditChannel(){
@@ -2926,9 +2938,6 @@ function saveEditChannel(){
   ch.type=document.getElementById('edit-ch-type').value;
   ch.topic=document.getElementById('edit-ch-topic').value.trim();
   ch.private=document.getElementById('edit-ch-private').classList.contains('on');
-  const coverB64=document.getElementById('edit-ch-cover-b64').value;
-  if(coverB64==='__clear__')ch.coverImg='';
-  else if(coverB64)ch.coverImg=coverB64;
   saveServers();closeModal('edit-channel-modal');
   renderChannelsPanel();
   if(state.currentChannelId===chId)renderChatArea();
@@ -3508,15 +3517,74 @@ function renderCustomEmojiList(srv){
     el.innerHTML='<div class="ce-table-row" style="justify-content:center;color:var(--text-3);font-size:.85rem;padding:24px;gap:6px;">Sin emojis aún — sube el primero arriba <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>';
     return;
   }
-  el.innerHTML=emojis.map((e,i)=>`
-    <div class="ce-table-row">
+  el.innerHTML='';
+  emojis.forEach((e,i)=>{
+    const row=document.createElement('div');
+    row.className='ce-table-row';
+    row.style.gridTemplateColumns='20px 60px 1fr 1fr auto';
+    row.draggable=true;
+    row.innerHTML=`
+      <span style="cursor:grab;color:var(--text-3);opacity:.5;font-size:.85rem;text-align:center;" title="Arrastrar para reordenar">⠿</span>
       <div><img src="${e.url}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
       <div style="font-size:.875rem;color:var(--text-1);font-weight:600;">:${e.name}:</div>
       <div style="font-size:.78rem;color:var(--text-3);">${e.uploadedBy||state.currentUser?.name||'?'}</div>
-      <button onclick="deleteCustomEmoji(${i})" style="background:rgba(244,63,94,.12);border:none;color:var(--red);cursor:pointer;border-radius:6px;padding:4px 8px;font-size:.75rem;font-weight:600;">Eliminar</button>
-    </div>`).join('');
+      <div style="display:flex;gap:6px;">
+        <button onclick="editCustomEmoji(${i})" style="background:rgba(124,58,237,.15);border:none;color:var(--accent);cursor:pointer;border-radius:6px;padding:4px 8px;font-size:.75rem;font-weight:600;">Editar</button>
+        <button onclick="deleteCustomEmoji(${i})" style="background:rgba(244,63,94,.12);border:none;color:var(--red);cursor:pointer;border-radius:6px;padding:4px 8px;font-size:.75rem;font-weight:600;">Eliminar</button>
+      </div>`;
+    row.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('emojiIdx',i);row.style.opacity='.4';});
+    row.addEventListener('dragend',()=>row.style.opacity='');
+    row.addEventListener('dragover',ev=>{ev.preventDefault();row.style.outline='1px solid var(--accent)';});
+    row.addEventListener('dragleave',()=>row.style.outline='');
+    row.addEventListener('drop',ev=>{
+      ev.preventDefault();row.style.outline='';
+      const from=parseInt(ev.dataTransfer.getData('emojiIdx'));
+      const to=i;
+      if(isNaN(from)||from===to)return;
+      const [moved]=srv.customEmojis.splice(from,1);
+      srv.customEmojis.splice(to,0,moved);
+      saveServers();renderCustomEmojiList(srv);
+    });
+    el.appendChild(row);
+  });
 }
 function deleteCustomEmoji(idx){const srv=getServer(state.currentServerId);if(!srv)return;srv.customEmojis.splice(idx,1);saveServers();renderCustomEmojiList(srv);}
+function editCustomEmoji(idx){
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  const e=srv.customEmojis[idx];if(!e)return;
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+  overlay.innerHTML=`<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:16px;padding:24px;width:340px;max-width:95vw;box-shadow:0 32px 64px rgba(0,0,0,.6);">
+    <h3 style="color:var(--text-0);margin-bottom:16px;">Editar emoji</h3>
+    <label style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);">Imagen</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:6px;margin-bottom:14px;">
+      <div id="_emo-prev" style="width:48px;height:48px;border-radius:10px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('_emo-file').click()"><img src="${e.url}" style="width:100%;height:100%;object-fit:contain;"></div>
+      <input id="_emo-file" type="file" accept="image/*" style="display:none" onchange="(function(i){if(!i.files[0])return;compressImagePNG(i.files[0],128,128,200,b64=>{const p=document.getElementById('_emo-prev');p.innerHTML='<img src=\\''+b64+'\\' style=\\'width:100%;height:100%;object-fit:contain;\\'>';p.dataset.b64=b64;})})(this)">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('_emo-file').click()">Cambiar imagen</button>
+    </div>
+    <label style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);">Nombre</label>
+    <input id="_emo-name" type="text" value="${e.name}" style="width:100%;background:var(--bg-3);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text-0);font-family:var(--font);font-size:.9rem;outline:none;margin-top:6px;box-sizing:border-box;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="this.closest('[style*=fixed]').remove()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditedEmoji(${idx})">Guardar</button>
+    </div>
+  </div>`;
+  overlay.onclick=ev=>{if(ev.target===overlay)overlay.remove();};
+  document.body.appendChild(overlay);
+  document.getElementById('_emo-name').focus();
+}
+function saveEditedEmoji(idx){
+  const srv=getServer(state.currentServerId);if(!srv)return;
+  const e=srv.customEmojis[idx];if(!e)return;
+  const name=document.getElementById('_emo-name').value.trim().toLowerCase().replace(/\s+/g,'_');
+  if(!name){showToast('⚠️ Nombre requerido');return;}
+  const newB64=document.getElementById('_emo-prev').dataset.b64;
+  if(newB64)e.url=newB64;
+  e.name=name;
+  saveServers();renderCustomEmojiList(srv);
+  document.querySelector('[style*=fixed][style*=backdrop]')?.remove();
+  showToast('✅ Emoji actualizado');
+}
 
 // ── CUSTOM STICKERS (server) ──
 function addCustomSticker(){
@@ -3774,7 +3842,7 @@ function renderProfilePopupContent(u,uid,loading){
   const name=u.name||'?';const color=u.avatarColor||u.color||'#7c3aed';const avatarUrl=u.avatarUrl||'';
   const bannerUrl=u.bannerUrl||'';
   const bannerEl=document.getElementById('pp-banner');
-  if(bannerUrl){bannerEl.style.backgroundImage=`url(${bannerUrl})`;bannerEl.style.backgroundSize='cover';bannerEl.style.backgroundPosition='center';bannerEl.style.background='';}
+  if(bannerUrl){bannerEl.style.backgroundImage=`url(${bannerUrl})`;bannerEl.style.backgroundSize='cover';bannerEl.style.backgroundPosition='center';}
   else{bannerEl.style.backgroundImage='';bannerEl.style.background=`linear-gradient(135deg,${color},${color}66)`;}
   bannerEl.style.opacity=loading?'.6':'1';
   const avaEl=document.getElementById('pp-ava');avaEl.style.background=avatarUrl?'#000':color;
@@ -3898,7 +3966,7 @@ function saveUserSettings(){
   let handle=document.getElementById('us-handle').value.trim().toLowerCase();
   if(!handle){handle=generateHandle(name);}
   if(handle.length<3){showToast('⚠️ El handle debe tener al menos 3 caracteres');return;}
-  const displayName=document.getElementById('us-displayname').value.trim();
+  const displayName=name;
   const bio=document.getElementById('us-bio').value.trim();
   const customStatus=document.getElementById('us-status').value.trim();
   const status=document.getElementById('us-presence').value;
@@ -4384,7 +4452,6 @@ function openUserSettings() {
   const u = state.currentUser; if (!u) return;
   document.getElementById('us-username').value = u.name || '';
   document.getElementById('us-handle').value = u.handle || '';
-  document.getElementById('us-displayname').value = u.displayName || '';
   document.getElementById('us-bio').value = u.bio || '';
   document.getElementById('us-status').value = u.customStatus || '';
   document.getElementById('us-presence').value = u.status || 'online';
