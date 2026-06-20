@@ -1211,6 +1211,46 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
           <span>Blanco</span>
         </div>
       </div>
+
+      <div style="margin:24px 0 16px;border-top:1px solid var(--border);"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <h4 style="font-size:.95rem;font-weight:700;color:var(--text-0);margin:0;">Tema personalizado</h4>
+        <span id="custom-theme-active-badge" style="display:none;font-size:.65rem;font-weight:700;color:var(--accent-g);background:var(--accent-glow);padding:2px 8px;border-radius:20px;">Activo</span>
+      </div>
+      <p style="font-size:.82rem;color:var(--text-3);margin:4px 0 16px;">Crea tus propios colores y un fondo de imagen. Descarga el archivo para guardarlo o compartirlo, y cárgalo cuando quieras.</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="flex:1;min-width:120px;">
+          <label style="font-size:.72rem;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Color de acento</label>
+          <input type="color" id="ct-accent" value="#7c3aed" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border);background:var(--bg-3);cursor:pointer;margin-top:6px;">
+        </div>
+        <div style="flex:1;min-width:120px;">
+          <label style="font-size:.72rem;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Fondo base</label>
+          <input type="color" id="ct-bg" value="#0b0b0f" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border);background:var(--bg-3);cursor:pointer;margin-top:6px;">
+        </div>
+        <div style="flex:1;min-width:120px;">
+          <label style="font-size:.72rem;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Paneles</label>
+          <input type="color" id="ct-panel" value="#141420" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border);background:var(--bg-3);cursor:pointer;margin-top:6px;">
+        </div>
+      </div>
+
+      <label style="font-size:.72rem;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Imagen de fondo (opcional)</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;margin-bottom:14px;">
+        <div id="ct-bg-preview" onclick="document.getElementById('ct-bg-file').click()" style="width:64px;height:64px;border-radius:10px;background:var(--bg-3);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--text-3);font-size:1.3rem;overflow:hidden;">＋</div>
+        <input type="file" id="ct-bg-file" accept="image/*" style="display:none" onchange="handleCustomThemeBgUpload(this)">
+        <input type="hidden" id="ct-bg-b64" value="">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ct-bg-file').click()">Subir imagen</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearCustomThemeBg()">Quitar imagen</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" style="flex:1;min-width:160px;" onclick="applyCustomTheme()">Aplicar tema</button>
+        <button class="btn btn-ghost" style="flex:1;min-width:140px;" onclick="downloadCustomTheme()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar tema</button>
+        <button class="btn btn-ghost" style="flex:1;min-width:140px;" onclick="document.getElementById('ct-theme-file').click()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Cargar tema</button>
+        <input type="file" id="ct-theme-file" accept="application/json,.json" style="display:none" onchange="loadCustomThemeFile(this)">
+      </div>
     </div>
 
     <!-- TAB 2: PRIVACIDAD -->
@@ -2014,7 +2054,9 @@ async function onUserLoggedIn(firebaseUser){
   state.currentServerId=srvExists?lastSrv:'__dm__';
   if(lastCh)state.currentChannelId=lastCh;
 
-  if(prefs.theme){
+  if(prefs.theme==='custom'&&prefs.customTheme){
+    applyCustomThemeData(prefs.customTheme);
+  } else if(prefs.theme){
     const card=document.querySelector(`.theme-card[data-theme="${prefs.theme}"]`);
     const dot=document.querySelector(`.theme-dot[data-theme="${prefs.theme}"]`);
     setTheme(prefs.theme, card||dot);
@@ -4523,6 +4565,12 @@ window.addEventListener('load',checkMobile);
 
 function setTheme(theme, el) {
   document.documentElement.dataset.theme = theme === 'purple' ? '' : theme;
+  // Limpiar overrides inline y fondo personalizado de un tema custom previo
+  const root=document.documentElement.style;
+  ['--accent','--accent-h','--accent-g','--accent-glow','--bg-0','--bg-1','--bg-2','--bg-3','--bg-4','--bg-5'].forEach(v=>root.removeProperty(v));
+  const bgLayer=document.getElementById('custom-theme-bg-layer');
+  if(bgLayer){bgLayer.remove();document.body.style.background='';}
+  const badge=document.getElementById('custom-theme-active-badge');if(badge)badge.style.display='none';
   document.querySelectorAll('.theme-dot,.theme-card').forEach(d => d.classList.remove('active'));
   if (el) el.classList.add('active');
   // Sync dot in sidebar if present
@@ -4534,10 +4582,124 @@ function setTheme(theme, el) {
 function loadSavedTheme() {
   try {
     const t = localStorage.getItem('nova_theme') || 'purple';
+    if(t==='custom'){
+      const saved=localStorage.getItem('nova_custom_theme');
+      if(saved){applyCustomThemeData(JSON.parse(saved));return;}
+    }
     const card = document.querySelector(`.theme-card[data-theme="${t}"]`);
     const dot = document.querySelector(`.theme-dot[data-theme="${t}"]`);
     setTheme(t, card || dot);
   } catch(e) {}
+}
+
+// ── TEMA PERSONALIZADO (colores + fondo, descargable/cargable) ──
+function handleCustomThemeBgUpload(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>8*1024*1024){showToast('⚠️ Imagen muy grande (máx 8MB)');return;}
+  compressImage(file,1920,1080,800,b64=>{
+    document.getElementById('ct-bg-b64').value=b64;
+    document.getElementById('ct-bg-preview').innerHTML=`<img src="${b64}" style="width:100%;height:100%;object-fit:cover;">`;
+  });
+}
+function clearCustomThemeBg(){
+  document.getElementById('ct-bg-b64').value='';
+  document.getElementById('ct-bg-preview').innerHTML='＋';
+}
+function readCustomThemeForm(){
+  return{
+    accent:document.getElementById('ct-accent').value,
+    bg:document.getElementById('ct-bg').value,
+    panel:document.getElementById('ct-panel').value,
+    bgImage:document.getElementById('ct-bg-b64').value||''
+  };
+}
+// Convierte un color hex a un objeto {r,g,b}
+function hexToRgb(hex){
+  const h=hex.replace('#','');
+  const n=parseInt(h.length===3?h.split('').map(c=>c+c).join(''):h,16);
+  return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function lighten(hex,amt){const{r,g,b}=hexToRgb(hex);return rgbToHex(r+amt,g+amt,b+amt);}
+function applyCustomThemeData(data){
+  if(!data)return;
+  document.documentElement.dataset.theme='custom';
+  const root=document.documentElement.style;
+  root.setProperty('--accent',data.accent);
+  root.setProperty('--accent-h',data.accent);
+  root.setProperty('--accent-g',lighten(data.accent,60));
+  root.setProperty('--accent-glow',data.accent+'40');
+  root.setProperty('--bg-0',data.bg);
+  root.setProperty('--bg-1',lighten(data.bg,4));
+  root.setProperty('--bg-2',data.panel);
+  root.setProperty('--bg-3',lighten(data.panel,6));
+  root.setProperty('--bg-4',lighten(data.panel,12));
+  root.setProperty('--bg-5',lighten(data.panel,18));
+  let bgLayer=document.getElementById('custom-theme-bg-layer');
+  if(data.bgImage){
+    if(!bgLayer){
+      bgLayer=document.createElement('div');
+      bgLayer.id='custom-theme-bg-layer';
+      bgLayer.style.cssText='position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;pointer-events:none;';
+      document.body.prepend(bgLayer);
+    }
+    bgLayer.style.backgroundImage=`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),url('${data.bgImage}')`;
+    document.body.style.background='transparent';
+  }else if(bgLayer){
+    bgLayer.remove();
+    document.body.style.background='';
+  }
+  // Reflejar los valores en el formulario y marcar como activo
+  const accentEl=document.getElementById('ct-accent');if(accentEl)accentEl.value=data.accent;
+  const bgEl=document.getElementById('ct-bg');if(bgEl)bgEl.value=data.bg;
+  const panelEl=document.getElementById('ct-panel');if(panelEl)panelEl.value=data.panel;
+  const previewEl=document.getElementById('ct-bg-preview');
+  const b64El=document.getElementById('ct-bg-b64');
+  if(previewEl&&b64El){
+    b64El.value=data.bgImage||'';
+    previewEl.innerHTML=data.bgImage?`<img src="${data.bgImage}" style="width:100%;height:100%;object-fit:cover;">`:'＋';
+  }
+  document.querySelectorAll('.theme-dot,.theme-card').forEach(d=>d.classList.remove('active'));
+  const badge=document.getElementById('custom-theme-active-badge');if(badge)badge.style.display='inline-block';
+}
+function applyCustomTheme(){
+  const data=readCustomThemeForm();
+  applyCustomThemeData(data);
+  try{
+    localStorage.setItem('nova_theme','custom');
+    localStorage.setItem('nova_custom_theme',JSON.stringify(data));
+  }catch(e){}
+  savePref({theme:'custom',customTheme:data});
+  showToast('✅ Tema personalizado aplicado');
+}
+function downloadCustomTheme(){
+  const data=readCustomThemeForm();
+  const blob=new Blob([JSON.stringify({novaTheme:true,version:1,...data},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='nova-tema.json';
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+  showToast('⬇️ Tema descargado');
+}
+function loadCustomThemeFile(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){showToast('⚠️ Archivo de tema muy grande');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    let data;
+    try{data=JSON.parse(e.target.result);}catch(err){showToast('❌ Archivo de tema inválido');return;}
+    if(!data||!data.accent||!data.bg||!data.panel){showToast('❌ Archivo de tema inválido');return;}
+    applyCustomThemeData(data);
+    try{
+      localStorage.setItem('nova_theme','custom');
+      localStorage.setItem('nova_custom_theme',JSON.stringify(data));
+    }catch(err){}
+    savePref({theme:'custom',customTheme:data});
+    showToast('✅ Tema cargado y aplicado');
+  };
+  reader.readAsText(file);
+  input.value='';
 }
 
 // ── IMAGE HELPERS ──
