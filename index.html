@@ -2879,11 +2879,20 @@ function renderMembersPanel(){
   if(!srv)return;
   // Server view: only show members of THIS server
   const onlineIds=new Set(Object.keys(state.onlineUsers));
-  const members=srv.members||[];
+  const members=(srv.members||[]).filter(m=>!m.isBot&&!(m.uid||m.id||'').startsWith('bot_'));
   const online=members.filter(m=>onlineIds.has(m.uid||m.id));
   const offline=members.filter(m=>!onlineIds.has(m.uid||m.id));
   if(online.length){const c=document.createElement('div');c.className='members-category';c.textContent=`EN LÍNEA — ${online.length}`;el.appendChild(c);online.forEach(m=>el.appendChild(buildMemberEl(m,true)));}
   if(offline.length){const c=document.createElement('div');c.className='members-category';c.textContent=`DESCONECTADOS — ${offline.length}`;el.appendChild(c);offline.forEach(m=>el.appendChild(buildMemberEl(m,false)));}
+  // Bots section
+  const bots=members.filter(m=>m.isBot||(m.uid||m.id||'').startsWith('bot_'));
+  if(bots.length){
+    const c=document.createElement('div');c.className='members-category';c.textContent=`BOTS — ${bots.length}`;el.appendChild(c);
+    bots.forEach(m=>{
+      const isOnline=onlineIds.has(m.uid||m.id);
+      el.appendChild(buildMemberEl(m,isOnline));
+    });
+  }
 }
 function buildMemberEl(m,isOnline){
   const uid=m.uid||m.id;
@@ -2894,7 +2903,9 @@ function buildMemberEl(m,isOnline){
   const statusColor=STATUS_COLORS[isOnline?realStatus:'offline'];
   const srv=getServer(state.currentServerId);
   const roleColor=(m.roles||[]).reduce((c,rn)=>{const ro=(srv?.roles||[]).find(r=>r.name===rn||r.id===rn);return (ro&&ro.color&&!c)?ro.color:c;},'');
-  div.innerHTML=`<div class="member-avatar-wrap"><div class="member-avatar" style="background:${bg}">${avatarC}</div><div class="member-status" style="background:${statusColor}"></div></div><div class="member-info"><div class="member-name" style="color:${isOnline?(roleColor||'var(--text-1)'):'var(--text-3)'}">${m.name||'?'}${uid===state.currentUser.uid?' <span style="font-size:.65rem;color:var(--accent);">(tú)</span>':''}</div></div>`;
+  const isBot=m.isBot||(uid||'').startsWith('bot_');
+  const botBadgeHtml=isBot?'<span class="bot-badge" style="font-size:.5rem;padding:1px 4px;margin-left:3px;">BOT</span>':'';
+  div.innerHTML=`<div class="member-avatar-wrap"><div class="member-avatar" style="background:${bg}">${avatarC}</div><div class="member-status" style="background:${statusColor}"></div></div><div class="member-info"><div class="member-name" style="color:${isOnline?(roleColor||'var(--text-1)'):'var(--text-3)'}">${m.name||'?'}${uid===state.currentUser.uid?' <span style="font-size:.65rem;color:var(--accent);">(tú)</span>':''}${botBadgeHtml}</div></div>`;
   div.onclick=e=>{showProfilePopupByUid(e,uid,m);e.stopPropagation();};
   return div;
 }
@@ -4145,11 +4156,43 @@ function shareInvite(platform) {
 
 // ── PROFILE POPUP ──
 function showProfilePopup(event,uid){
-  if(!uid||uid.startsWith('bot_')||uid==='system')return;
+  if(!uid||uid==='system')return;
   const srv=getServer(state.currentServerId);
   const m=(srv?.members||[]).find(m=>(m.uid||m.id)===uid)||state.onlineUsers[uid];
   if(!m)return;
+  if(uid.startsWith('bot_')){showBotProfilePopup(event,m);return;}
   showProfilePopupByUid(event,uid,m);
+}
+
+function showBotProfilePopup(event,botInfo){
+  const popup=document.getElementById('profile-popup');
+  const color=botInfo.avatarColor||botInfo.color||'#5865f2';
+  popup.style.left=Math.min(event.clientX+10,window.innerWidth-300)+'px';
+  popup.style.top=Math.min(event.clientY-20,window.innerHeight-360)+'px';
+
+  const avatarHtml=botInfo.avatarUrl
+    ?`<img src="${botInfo.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+    :(botInfo.name||'B')[0].toUpperCase();
+
+  const commandsHtml=(botInfo.botCommands||[]).map(cmd=>`
+    <div style="background:var(--bg-3);border-radius:6px;padding:5px 10px;font-size:.75rem;color:var(--text-1);font-family:monospace;margin-bottom:4px;">${cmd}</div>
+  `).join('');
+
+  popup.innerHTML=`
+    <div style="height:56px;background:linear-gradient(135deg,${color},${color}88);"></div>
+    <div style="padding:0 14px 14px;">
+      <div style="width:64px;height:64px;border-radius:50%;border:4px solid var(--bg-1);margin-top:-32px;overflow:hidden;background:${color};display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:#fff;">
+        ${avatarHtml}
+      </div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:1rem;font-weight:700;color:var(--text-0);">${botInfo.name||'Bot'}</span>
+        <span style="background:var(--accent);color:#fff;font-size:.55rem;font-weight:700;border-radius:4px;padding:1px 5px;">BOT</span>
+      </div>
+      <div style="margin-top:4px;font-size:.78rem;color:var(--text-2);line-height:1.4;">${botInfo.botDescription||'Bot de Nova.'}</div>
+      ${commandsHtml?`<div style="margin-top:10px;font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--text-3);letter-spacing:.05em;margin-bottom:6px;">Comandos</div>${commandsHtml}`:''}
+    </div>`;
+  popup.classList.add('open');
+  popup.dataset.uid=botInfo.uid||'bot';
 }
 async function showProfilePopupByUid(event,uid,info){
   const popup=document.getElementById('profile-popup');
