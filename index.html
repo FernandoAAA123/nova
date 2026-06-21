@@ -143,8 +143,9 @@ select option{background:var(--bg-3);color:var(--text-0);}
 #app.visible{display:flex;}
 
 /* SERVER BAR — cuadrados redondeados, no círculos */
-#server-bar{width:var(--sidebar-w);background:var(--bg-0);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;overflow-y:auto;flex-shrink:0;border-right:1px solid var(--border);}
-#server-icons-list{display:flex;flex-direction:column;align-items:center;gap:2px;}
+#server-bar{width:var(--sidebar-w);background:var(--bg-0);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;overflow:hidden;flex-shrink:0;border-right:1px solid var(--border);}
+#server-icons-list{display:flex;flex-direction:column;align-items:center;gap:2px;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 200px);flex-shrink:0;scrollbar-width:none;}
+#server-icons-list::-webkit-scrollbar{display:none;}
 .server-icon{width:44px;height:44px;border-radius:14px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.15rem;font-weight:700;color:var(--text-2);transition:border-radius .2s,background .15s,box-shadow .15s;position:relative;flex-shrink:0;overflow:hidden;user-select:none;border:1.5px solid transparent;}
 .server-icon:hover{border-radius:12px;background:var(--bg-4);border-color:var(--border);}
 .server-icon.active{border-radius:12px;background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 16px var(--accent-glow);}
@@ -488,7 +489,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   #server-bar::-webkit-scrollbar{display:none;}
   #server-bar .server-sep{width:1px;height:28px;margin:0 4px;flex-shrink:0;}
   #server-bar .server-icon{flex-shrink:0;}
-  #server-icons-list{flex-direction:row;align-items:center;gap:4px;}
+  #server-icons-list{flex-direction:row;align-items:center;gap:4px;overflow-y:visible;overflow-x:visible;max-height:none;}
+  #server-bar{overflow-x:auto;overflow-y:hidden;}
 
   /* Toggle button to hide/show the server bar — mobile only */
   #server-bar-toggle{
@@ -3449,12 +3451,15 @@ function createServer(){
     customEmojis:[],customStickers:[],inviteCode:genId(8)};
   state.servers.push(srv);saveServers();closeModal('create-server-modal');
   document.getElementById('new-server-name').value='';
+  document.getElementById('new-server-desc').value='';
   document.getElementById('new-server-icon-b64').value='';document.getElementById('new-server-type').value='public';
   document.getElementById('new-server-icon-emoji').value='';
+  state.serverSelectedColor='#7c3aed';
   const prev=document.getElementById('new-server-icon-preview');
   prev.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
   prev.style.background='var(--bg-4)';
-  selectServer(id);showToast('✅ Comunidad "'+name+'" creado');
+  renderServerBar();
+  selectServer(id);showToast('✅ Comunidad "'+name+'" creada');
 }
 function openSsSection(section, btn){
   document.querySelectorAll('.ss-section').forEach(s=>s.classList.remove('active'));
@@ -4765,20 +4770,28 @@ function insertCustomEmoji(idx){
 // ── CALLS ──
 async function startVoiceCall(){
   if(state.callActive){showToast('Ya hay una llamada activa');return;}
-  if(!state.currentChannelId){showToast('Selecciona un canal');return;}
+  // En DMs: usar el canal DM como channelId de llamada
+  const isDM=state.currentServerId==='__dm__';
+  const callChId=state.currentChannelId;
+  if(!callChId){showToast('⚠️ Selecciona un canal primero');return;}
+  // En servidores, verificar que el canal existe y es accesible
+  if(!isDM){
+    const srv=getServer(state.currentServerId);
+    if(!srv){showToast('⚠️ Selecciona un servidor primero');return;}
+  }
   try{
     state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-    state.callActive=true;state.callChannelId=state.currentChannelId;state.callStartTime=Date.now();
+    state.callActive=true;state.callChannelId=callChId;state.callStartTime=Date.now();
     document.getElementById('call-bar').classList.add('active');
     startCallTimer();
-    fbSet('calls/'+state.currentChannelId+'/participants/'+state.currentUser.uid,{uid:state.currentUser.uid,name:state.currentUser.name,color:state.currentUser.avatarColor||'',avatarUrl:state.currentUser.avatarUrl||'',ts:Date.now()});
-    window._fbOnDisconnect(fbRef('calls/'+state.currentChannelId+'/participants/'+state.currentUser.uid)).remove();
+    fbSet('calls/'+callChId+'/participants/'+state.currentUser.uid,{uid:state.currentUser.uid,name:state.currentUser.name,color:state.currentUser.avatarColor||'',avatarUrl:state.currentUser.avatarUrl||'',ts:Date.now()});
+    window._fbOnDisconnect(fbRef('calls/'+callChId+'/participants/'+state.currentUser.uid)).remove();
     state._callBarCb=snap=>{
       const parts=snap.exists()?Object.values(snap.val()):[];
       const cpEl=document.getElementById('call-participants');
       if(cpEl)cpEl.innerHTML=parts.map(p=>`<div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;border:2px solid var(--bg-0);margin-left:-6px;">${(p.name||'?')[0]}</div>`).join('');
     };
-    state._callBarPath='calls/'+state.currentChannelId+'/participants';
+    state._callBarPath='calls/'+callChId+'/participants';
     fbOn(state._callBarPath,state._callBarCb);
     showToast('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Llamada iniciada');
   }catch(e){showToast('❌ No se pudo acceder al micrófono');}
