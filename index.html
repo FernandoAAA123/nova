@@ -233,6 +233,12 @@ select option{background:var(--bg-3);color:var(--text-0);}
 .reaction{background:var(--bg-3);border:1.5px solid var(--border);border-radius:20px;padding:3px 9px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:3px;transition:all .1s;}
 .reaction:hover,.reaction.mine{background:var(--accent-glow);border-color:var(--accent);color:var(--accent-g);}
 .reaction span{font-size:.7rem;color:var(--text-2);}
+.quick-react-popup{position:fixed;display:none;background:var(--bg-3);border:1px solid var(--border);border-radius:20px;padding:6px 8px;gap:4px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.quick-react-popup.open{display:flex;}
+.quick-react-popup .qr-emoji{font-size:1.3rem;line-height:1;cursor:pointer;padding:5px;border-radius:50%;transition:background .12s,transform .12s;}
+.quick-react-popup .qr-emoji:hover{background:var(--accent-glow);transform:scale(1.2);}
+.quick-react-popup .qr-more{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:var(--text-2);cursor:pointer;transition:background .12s,color .12s;}
+.quick-react-popup .qr-more:hover{background:var(--accent-glow);color:var(--accent-g);}
 .reply-preview{background:rgba(124,58,237,.07);border-left:2px solid var(--accent);padding:3px 8px;margin-bottom:2px;border-radius:0 var(--r-xs) var(--r-xs) 0;font-size:.75rem;color:var(--text-2);}
 
 /* TYPING */
@@ -924,6 +930,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
         <button class="input-btn" onclick="openScheduledMessage()" title="Programar mensaje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
         <button class="input-btn" onclick="sendMessage()" title="Enviar" style="color:var(--accent);"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
+      <!-- QUICK REACT POPUP -->
+      <div class="quick-react-popup" id="quick-react-popup"></div>
       <!-- PICKER PREMIUM -->
       <div class="picker-popup" id="emoji-picker">
         <div class="picker-header">
@@ -1077,6 +1085,12 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
     <input type="hidden" id="new-server-icon-b64">
     <label>Nombre</label><input type="text" id="new-server-name" placeholder="Mi comunidad">
     <label>Descripción</label><input type="text" id="new-server-desc" placeholder="Opcional">
+    <label>Tipo de comunidad</label>
+    <select id="new-server-type" style="width:100%;background:var(--bg-3);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;color:var(--text-0);font-family:var(--font);font-size:.9rem;outline:none;">
+      <option value="public">Pública</option>
+      <option value="private">Privada</option>
+      <option value="request">Por solicitud</option>
+    </select>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('create-server-modal')">Cancelar</button>
       <button class="btn btn-primary" onclick="createServer()">Crear</button>
@@ -1783,7 +1797,7 @@ let state={
   currentUser:null,servers:[],currentServerId:'__dm__',currentChannelId:null,
   messages:{},onlineUsers:{},typingUsers:{},
   serverSelectedColor:'#5865f2',avatarSelectedColor:'#5865f2',
-  membersVisible:true,pickerMode:'emoji',replyToMsg:null,editingMsgId:null,
+  membersVisible:true,pickerMode:'emoji',replyToMsg:null,editingMsgId:null,reactTargetMsgId:null,
   unreadCounts:{},dmConversations:{},currentDmUid:null,
   callActive:false,callChannelId:null,callStartTime:null,callTimerInterval:null,
   isMuted:false,localStream:null,videoCallActive:false,isCamOff:false,
@@ -2840,7 +2854,7 @@ function hoverBtns(msg,isMe){
   const canDelete=isMe||isServerAdmin(srv);
   const canPin=isServerAdmin(srv);
   const inServer=state.currentServerId&&state.currentServerId!=='__dm__';
-  return`<button class="icon-btn" onclick="quickReact('${msg.id}')" title="Reaccionar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+  return`<button class="icon-btn" onclick="quickReact('${msg.id}',this)" title="Reaccionar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
     <button class="icon-btn" onclick="setReply('${msg.id}')" title="Responder"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
     ${inServer?`<button class="icon-btn" onclick="openThreadModal('${msg.id}')" title="Crear hilo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`:''}
     ${isMe?`<button class="icon-btn" onclick="startEditMsg('${msg.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`:''}
@@ -2879,19 +2893,26 @@ function renderMembersPanel(){
   if(!srv)return;
   // Server view: only show members of THIS server
   const onlineIds=new Set(Object.keys(state.onlineUsers));
-  const members=(srv.members||[]).filter(m=>!m.isBot&&!(m.uid||m.id||'').startsWith('bot_'));
-  const online=members.filter(m=>onlineIds.has(m.uid||m.id));
-  const offline=members.filter(m=>!onlineIds.has(m.uid||m.id));
-  if(online.length){const c=document.createElement('div');c.className='members-category';c.textContent=`EN LÍNEA — ${online.length}`;el.appendChild(c);online.forEach(m=>el.appendChild(buildMemberEl(m,true)));}
-  if(offline.length){const c=document.createElement('div');c.className='members-category';c.textContent=`DESCONECTADOS — ${offline.length}`;el.appendChild(c);offline.forEach(m=>el.appendChild(buildMemberEl(m,false)));}
-  // Bots section
-  const bots=members.filter(m=>m.isBot||(m.uid||m.id||'').startsWith('bot_'));
-  if(bots.length){
-    const c=document.createElement('div');c.className='members-category';c.textContent=`BOTS — ${bots.length}`;el.appendChild(c);
-    bots.forEach(m=>{
-      const isOnline=onlineIds.has(m.uid||m.id);
-      el.appendChild(buildMemberEl(m,isOnline));
-    });
+  const allMembers=srv.members||[];
+  const regularMembers=allMembers.filter(m=>!m.isBot&&!(m.uid||m.id||'').startsWith('bot_'));
+  const botMembers=allMembers.filter(m=>m.isBot||(m.uid||m.id||'').startsWith('bot_'));
+  const online=regularMembers.filter(m=>onlineIds.has(m.uid||m.id));
+  const offline=regularMembers.filter(m=>!onlineIds.has(m.uid||m.id));
+  const onlineBots=botMembers.filter(m=>onlineIds.has(m.uid||m.id));
+  const offlineBots=botMembers.filter(m=>!onlineIds.has(m.uid||m.id));
+  // EN LÍNEA: users + active bots together
+  const totalOnline=[...online,...onlineBots];
+  if(totalOnline.length){
+    const c=document.createElement('div');c.className='members-category';c.textContent=`EN LÍNEA — ${totalOnline.length}`;el.appendChild(c);
+    online.forEach(m=>el.appendChild(buildMemberEl(m,true)));
+    onlineBots.forEach(m=>el.appendChild(buildMemberEl(m,true)));
+  }
+  // DESCONECTADOS: offline users + inactive bots together
+  const totalOffline=[...offline,...offlineBots];
+  if(totalOffline.length){
+    const c=document.createElement('div');c.className='members-category';c.textContent=`DESCONECTADOS — ${totalOffline.length}`;el.appendChild(c);
+    offline.forEach(m=>el.appendChild(buildMemberEl(m,false)));
+    offlineBots.forEach(m=>el.appendChild(buildMemberEl(m,false)));
   }
 }
 function buildMemberEl(m,isOnline){
@@ -2992,7 +3013,30 @@ function setReply(id){
   document.getElementById('msg-input').focus();
 }
 function cancelReply(){state.replyToMsg=null;document.getElementById('reply-bar').classList.remove('show');}
-function quickReact(id){doReaction(id,['👍','❤️','😂','😮','😢','🎉','🔥','💯'][Math.floor(Math.random()*8)]);}
+const QUICK_REACT_EMOJIS=['👍','❤️','😂','😮','😢','🎉'];
+function quickReact(id,btnEl){
+  const popup=document.getElementById('quick-react-popup');
+  if(popup.classList.contains('open')&&popup.dataset.msgId===id){closeQuickReact();return;}
+  popup.dataset.msgId=id;
+  popup.innerHTML=QUICK_REACT_EMOJIS.map(e=>`<div class="qr-emoji" onclick="doReaction('${id}','${e}');closeQuickReact()">${e}</div>`).join('')
+    +`<div class="qr-more" onclick="closeQuickReact();openFullReactPicker('${id}')" title="Más reacciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>`;
+  const btn=btnEl||event?.currentTarget;
+  if(btn){
+    const r=btn.getBoundingClientRect();
+    popup.classList.add('open');
+    const pw=popup.offsetWidth||260;
+    let left=r.left+r.width/2-pw/2;
+    left=Math.max(8,Math.min(left,window.innerWidth-pw-8));
+    let top=r.top-46;
+    if(top<8)top=r.bottom+8;
+    popup.style.left=left+'px';popup.style.top=top+'px';
+  }else popup.classList.add('open');
+}
+function closeQuickReact(){const p=document.getElementById('quick-react-popup');p.classList.remove('open');p.dataset.msgId='';}
+function openFullReactPicker(msgId){
+  state.reactTargetMsgId=msgId;
+  togglePicker('emoji');
+}
 function doReaction(msgId,emoji){
   const ch=state.currentChannelId;
   const msg=(state.messages[ch]||[]).find(m=>m.id===msgId);if(!msg)return;
@@ -4468,6 +4512,13 @@ function filterEmojis(q){
     :`<div style="text-align:center;color:var(--text-3);padding:20px;font-size:.85rem;">Sin resultados para "${q}"</div>`;
 }
 function insertEmoji(e){
+  if(state.reactTargetMsgId){
+    doReaction(state.reactTargetMsgId,e);
+    state.reactTargetMsgId=null;
+    closePicker();
+    addRecentEmoji(e);
+    return;
+  }
   const i=document.getElementById('msg-input');
   const pos=i.selectionStart||i.value.length;
   i.value=i.value.slice(0,pos)+e+i.value.slice(pos);
@@ -5353,7 +5404,8 @@ function updateOnlineCount(){
 }
 function handleGlobalClick(e){
   if(!e.target.closest('#add-server-menu')&&!e.target.closest('#add-server-btn'))closeAddServerMenu();
-  if(!e.target.closest('#emoji-picker')&&!e.target.closest('.input-btn'))closePicker();
+  if(!e.target.closest('#emoji-picker')&&!e.target.closest('.input-btn')){closePicker();state.reactTargetMsgId=null;}
+  if(!e.target.closest('#quick-react-popup')&&!e.target.closest('[onclick^="quickReact"]'))closeQuickReact();
   if(!e.target.closest('#context-menu')&&!e.target.closest('.server-icon')&&!e.target.closest('.friend-ctx-btn'))closeCtx();
   if(!e.target.closest('#profile-popup')&&!e.target.closest('[data-uid]')&&!e.target.closest('.member-item'))closeProfilePopup();
   if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id);
