@@ -395,6 +395,12 @@ select option{background:var(--bg-3);color:var(--text-0);}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .15s;backdrop-filter:blur(6px);}
 .modal-overlay.open{opacity:1;pointer-events:all;}
 .modal{background:var(--bg-2);border:1px solid var(--border);border-radius:20px;padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 0 0 1px var(--border),0 40px 80px rgba(0,0,0,.6);}
+.modal-content{background:var(--bg-2);border:1px solid var(--border);border-radius:20px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 0 0 1px var(--border),0 40px 80px rgba(0,0,0,.6);display:flex;flex-direction:column;}
+.modal-content>*:not(.modal-header){padding-left:24px;padding-right:24px;}
+.modal-content>*:last-child{padding-bottom:24px;}
+.modal-content>.modal-header+*{padding-top:20px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-header h2{font-size:1.15rem;font-weight:700;color:var(--text-0);letter-spacing:-.02em;display:flex;align-items:center;gap:8px;margin:0;}
 .modal h2{font-size:1.15rem;font-weight:700;color:var(--text-0);margin-bottom:6px;letter-spacing:-.02em;}
 .modal .sub{color:var(--text-2);font-size:.85rem;margin-bottom:18px;}
 .modal label{display:block;font-size:.67rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:5px;margin-top:14px;}
@@ -609,23 +615,21 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
   #members-panel{display:none!important;}
 
   /* Profile popup full-width on mobile */
-  #profile-popup{width:calc(100vw - 24px);left:12px!important;right:12px!important;}
+  #profile-popup{width:calc(100vw - 24px);left:12px!important;right:12px!important;max-height:calc(100vh - 24px);overflow-y:auto;}
 
   /* Context menu safe positioning */
   #context-menu{max-width:calc(100vw - 24px);}
 
-  /* Modals full screen on mobile */
-  .modal{
+  /* Modals: centered on mobile (not a bottom-sheet) so they never get cut off by the viewport */
+  .modal-overlay{align-items:center;padding:16px;}
+  .modal,.modal-content{
     width:100%!important;
     max-width:100%!important;
-    max-height:calc(100vh - 70px)!important;
-    border-radius:20px 20px 0 0;
+    max-height:calc(100vh - 32px)!important;
+    border-radius:16px!important;
     margin:0;
-    padding:20px 16px;
   }
-  .modal-overlay{align-items:flex-end;padding:0;}
-  .modal-overlay#create-server-modal{align-items:center;padding:16px;}
-  .modal-overlay#create-server-modal .modal{max-height:calc(100vh - 80px)!important;border-radius:16px!important;overflow-y:auto;}
+  .modal{padding:20px 16px;}
 
   /* Server settings modal */
   #server-settings-modal{max-height:92vh!important;border-radius:20px 20px 0 0;overflow:hidden;}
@@ -3187,13 +3191,18 @@ function quickReact(id,btnEl){
     +`<div class="qr-more" onclick="closeQuickReact();openFullReactPicker('${id}')" title="Más reacciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>`;
   const btn=btnEl||event?.currentTarget;
   if(btn){
-    const r=btn.getBoundingClientRect();
+    popup.style.left='-9999px';popup.style.top='-9999px';
     popup.classList.add('open');
+    const r=btn.getBoundingClientRect();
     const pw=popup.offsetWidth||260;
+    const ph=popup.offsetHeight||40;
+    const margin=8;
     let left=r.left+r.width/2-pw/2;
-    left=Math.max(8,Math.min(left,window.innerWidth-pw-8));
-    let top=r.top-46;
-    if(top<8)top=r.bottom+8;
+    left=Math.max(margin,Math.min(left,window.innerWidth-pw-margin));
+    // Prefer above the button; fall back below if it doesn't fit; clamp to viewport either way.
+    let top=r.top-ph-10;
+    if(top<margin)top=r.bottom+10;
+    if(top+ph>window.innerHeight-margin)top=Math.max(margin,window.innerHeight-ph-margin);
     popup.style.left=left+'px';popup.style.top=top+'px';
   }else popup.classList.add('open');
 }
@@ -4523,8 +4532,6 @@ function showProfilePopup(event,uid){
 function showBotProfilePopup(event,botInfo){
   const popup=document.getElementById('profile-popup');
   const color=getAutoAvatarColor(botInfo.uid||botInfo.id||botInfo.name);
-  popup.style.left=Math.min(event.clientX+10,window.innerWidth-300)+'px';
-  popup.style.top=Math.min(event.clientY-20,window.innerHeight-360)+'px';
 
   const avatarHtml=botInfo.avatarUrl
     ?`<img src="${botInfo.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
@@ -4548,7 +4555,22 @@ function showBotProfilePopup(event,botInfo){
       ${commandsHtml?`<div style="margin-top:10px;font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--text-3);letter-spacing:.05em;margin-bottom:6px;">Comandos</div>${commandsHtml}`:''}
     </div>`;
   popup.classList.add('open');
+  positionProfilePopup(event);
   popup.dataset.uid=botInfo.uid||'bot';
+}
+// Clamp the profile popup so it always stays fully inside the viewport,
+// using the popup's real rendered size instead of a fixed guess.
+function positionProfilePopup(event){
+  const popup=document.getElementById('profile-popup');
+  const margin=8;
+  const pw=popup.offsetWidth||276;
+  const ph=popup.offsetHeight||300;
+  let left=(event.clientX||0)+10;
+  left=Math.max(margin,Math.min(left,window.innerWidth-pw-margin));
+  let top=(event.clientY||0)-20;
+  top=Math.max(margin,Math.min(top,window.innerHeight-ph-margin));
+  popup.style.left=left+'px';
+  popup.style.top=top+'px';
 }
 async function showProfilePopupByUid(event,uid,info){
   const popup=document.getElementById('profile-popup');
@@ -4557,18 +4579,18 @@ async function showProfilePopupByUid(event,uid,info){
     info=(srv?.members||[]).find(m=>(m.uid||m.id)===uid)||state.onlineUsers[uid]||{};
   }
   // Position + open immediately, render what we have (avoids blank popup)
-  popup.style.left=Math.min(event.clientX+10,window.innerWidth-300)+'px';
-  popup.style.top=Math.min(event.clientY-20,window.innerHeight-360)+'px';
   popup.classList.add('open');
   popup.dataset.uid=uid;
   const liveUser=state.onlineUsers[uid]||{};
   renderProfilePopupContent({...info,...liveUser},uid,true); // loading=true, partial data
+  positionProfilePopup(event);
   // Fetch full persisted profile (has avatarUrl/bannerUrl/bio even if user is offline)
   let fullUser={};
   try{const snap=await fbGet('users/'+uid);if(snap.exists())fullUser=snap.val();}catch(e){}
   if(!popup.classList.contains('open')||popup.dataset.uid!==uid)return;
   const u={...info,...fullUser,...liveUser};
   renderProfilePopupContent(u,uid,false);
+  positionProfilePopup(event); // content size may have changed (bio/links/roles) — re-clamp
 }
 function renderProfilePopupContent(u,uid,loading){
   const name=u.name||'?';const color=getAutoAvatarColor(uid||name);const avatarUrl=u.avatarUrl||'';
