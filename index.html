@@ -4433,8 +4433,24 @@ function toggleAddServerMenu(e) {
   const menu = document.getElementById('add-server-menu');
   const btn = document.getElementById('add-server-btn');
   const rect = btn.getBoundingClientRect();
-  menu.style.top = rect.top + 'px';
-  menu.style.left = (rect.right + 8) + 'px';
+  const menuW=210,menuMaxH=320; // min-width/aprox alto del menú
+  if(isMobileView()){
+    // En mobile la barra de servers es horizontal (abajo) — abrir hacia arriba
+    // y pegado al borde derecho de la pantalla, nunca fuera del viewport.
+    menu.style.top='auto';
+    menu.style.bottom=(window.innerHeight-rect.top+8)+'px';
+    menu.style.left='auto';
+    menu.style.right='10px';
+  }else{
+    let left=rect.right+8;
+    if(left+menuW>window.innerWidth-8)left=window.innerWidth-menuW-8;
+    let top=rect.top;
+    if(top+menuMaxH>window.innerHeight-8)top=Math.max(8,window.innerHeight-menuMaxH-8);
+    menu.style.bottom='auto';
+    menu.style.right='auto';
+    menu.style.top=top+'px';
+    menu.style.left=left+'px';
+  }
   const isOpen = menu.style.display !== 'none';
   menu.style.display = isOpen ? 'none' : 'block';
   // Show/hide invite option based on whether a server is selected
