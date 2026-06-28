@@ -365,6 +365,11 @@ select option{background:var(--bg-3);color:var(--text-0);}
 .call-timer{font-size:.78rem;color:var(--green);font-family:monospace;font-weight:700;}
 .call-btn{padding:5px 14px;border-radius:var(--r-xs);border:none;font-family:var(--font);font-size:.78rem;font-weight:600;cursor:pointer;}
 .call-btn.end{background:var(--red);color:#fff;}
+#screen-share-btn.active{background:var(--green)!important;color:#fff!important;}
+#screen-share-area{display:flex;flex-wrap:wrap;gap:10px;padding:10px 16px 0;flex-shrink:0;}
+.screen-share-box{background:#000;border-radius:var(--r-sm);overflow:hidden;position:relative;width:min(420px,100%);aspect-ratio:16/9;flex-shrink:0;}
+.screen-share-box video{width:100%;height:100%;object-fit:contain;background:#000;}
+.screen-share-label{position:absolute;bottom:0;left:0;right:0;padding:6px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;font-size:.75rem;font-weight:600;}
 .call-btn.mute{background:var(--bg-4);color:var(--text-1);}
 
 /* VIDEO MODAL */
@@ -900,8 +905,10 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <div id="call-participants"></div>
       <button class="call-btn mute" onclick="toggleCallMute()" id="call-mute-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Silenciar</button>
       <button class="call-btn" onclick="openVideoCall()" style="background:var(--bg-4);color:var(--text-1);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Vídeo</button>
+      <button class="call-btn" id="screen-share-btn" onclick="toggleScreenShare()" title="Compartir pantalla" style="background:var(--bg-4);color:var(--text-1);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Pantalla</button>
       <button class="call-btn end" onclick="endCall()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.37 1.93.58 2.96.58a2 2 0 0 1 2 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07C9.44 17.25 7.76 15.57 6.46 13.56A19.79 19.79 0 0 1 3.39 4.93 2 2 0 0 1 5.37 2.75h3a2 2 0 0 1 2 1.72c.127.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11l-1.27 1.27"/><line x1="23" y1="1" x2="1" y2="23"/></svg> Colgar</button>
     </div>
+    <div id="screen-share-area"></div>
     <div id="chat-header">
       <button class="icon-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" style="display:none;font-size:1.1rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <span class="ch-name" id="chat-channel-name">Selecciona un canal</span>
@@ -1899,6 +1906,8 @@ async function fbGet(path){return window._fbGet(fbRef(path));}
 function fbOn(path,cb){return window._fbOnValue(fbRef(path),cb);}
 function fbOff(path,cb){return window._fbOff(fbRef(path),'value',cb);}
 function fbOnChild(path,cb){return window._fbOnChildAdded(fbRef(path),cb);}
+function fbPush(path,val){return window._fbPush(fbRef(path),val);}
+function fbOffChild(path,cb){return window._fbOff(fbRef(path),'child_added',cb);}
 const _chVoiceListeners={};
 
 // ── PREFS PERSISTENCE (Firebase, survives Firebase project migration) ──
@@ -2266,7 +2275,7 @@ function subscribeChannel(channelId){
           state.unreadCounts[channelId]=(state.unreadCounts[channelId]||0)+1;
           renderChannelsPanel();
         }
-        const preview=m.audioData?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Mensaje de voz':m.imageData?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Imagen':(m.content||'').substring(0,60);
+        const preview=m.audioData?'🎤 Mensaje de voz':m.imageData?'🖼️ Imagen':(m.content||'').substring(0,60);
         sendDesktopNotif(m.name, preview, m.avatarUrl||'');
       });
     }
@@ -2650,7 +2659,7 @@ function renderVoiceRoom(ch){
         </div>
         ${connected
           ?`<button class="btn btn-ghost voice-room-leave" onclick="endCall()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.37 1.93.58 2.96.58a2 2 0 0 1 2 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07C9.44 17.25 7.76 15.57 6.46 13.56A19.79 19.79 0 0 1 3.39 4.93 2 2 0 0 1 5.37 2.75h3a2 2 0 0 1 2 1.72c.127.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11l-1.27 1.27"/><line x1="23" y1="1" x2="1" y2="23"/></svg> Desconectar</button>`
-          :`<button class="btn btn-primary voice-room-join" onclick="joinVoiceRoom('${ch.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Unirse a voz</button>`
+          :`<button class="btn btn-primary voice-room-join" onclick="joinVoiceRoom('${ch.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Unirse a voz</button><button class="btn btn-ghost voice-room-join" title="Unirte sin micrófono — solo podrás escuchar hasta que lo actives" onclick="joinVoiceRoom('${ch.id}',true)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> Solo escuchar</button>`
         }
       </div>
       <div class="voice-room-participants" id="voice-room-participants"></div>
@@ -2675,18 +2684,18 @@ function subscribeVoiceRoom(channelId){
     wrap.innerHTML=parts.map(p=>`
       <div class="voice-room-member">
         <div class="member-avatar" style="width:56px;height:56px;font-size:1.2rem;background:${p.color||'var(--accent)'};">${p.avatarUrl?`<img src="${p.avatarUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:(p.name||'?')[0].toUpperCase()}</div>
-        <span>${p.name||'?'}</span>
+        <span>${p.name||'?'}${p.listenOnly?' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" title="Solo escuchando"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>':''}${p.sharingScreen?' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" title="Compartiendo pantalla"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>':''}</span>
       </div>`).join('');
   };
   fbOn(path,cb);
   _voiceRoomActivePath=path;
   _voiceRoomActiveCb=cb;
 }
-async function joinVoiceRoom(channelId){
+async function joinVoiceRoom(channelId,listenOnly){
   if(state.callActive&&state.callChannelId===channelId)return;
   if(state.callActive)endCall();
   state.currentChannelId=channelId;
-  await startVoiceCall();
+  await startVoiceCall(listenOnly);
   if(getChannel(state.currentChannelId,getServer(state.currentServerId))?.type==='voice')renderVoiceRoom(getChannel(state.currentChannelId,getServer(state.currentServerId)));
 }
 function renderForumPosts(ch){
@@ -4970,7 +4979,159 @@ function insertCustomEmoji(idx){
 }
 
 // ── CALLS ──
-async function startVoiceCall(){
+// ── WEBRTC: AUDIO REAL ENTRE PARTICIPANTES + PANTALLA COMPARTIDA ──
+// Mesh P2P: cada participante abre una conexión directa con cada otro.
+// Bien para llamadas chicas/medianas; no escala a salas enormes (no hay SFU).
+const ICE_SERVERS=[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+];
+let _rtcPeers={};              // otherUid -> RTCPeerConnection
+let _rtcMakingOffer={};        // otherUid -> bool (para el patrón de negociación perfecta)
+let _rtcDescListeners={};      // otherUid -> {path,cb}
+let _rtcCandListeners={};      // otherUid -> {path,cb}
+let _rtcRemoteTrackMetaMap={}; // otherUid -> {trackId:'mic'|'screen'}
+let _rtcMyTrackMeta={};        // trackId -> 'mic'|'screen' (mis propias pistas, esta sesión)
+let _rtcChannelId=null;
+
+function _pairKey(a,b){return [a,b].sort().join('__');}
+function _isPolite(myUid,otherUid){return myUid>otherUid;} // el uid "mayor" cede en colisiones de oferta
+
+function _ensurePeer(channelId,otherUid){
+  if(_rtcPeers[otherUid])return _rtcPeers[otherUid];
+  const myUid=state.currentUser.uid;
+  const pc=new RTCPeerConnection({iceServers:ICE_SERVERS});
+  _rtcPeers[otherUid]=pc;
+  const basePath='calls/'+channelId+'/rtc/'+_pairKey(myUid,otherUid);
+
+  const hasAudio=!!(state.localStream&&state.localStream.getAudioTracks().length);
+  pc.addTransceiver('audio',{direction:hasAudio?'sendrecv':'recvonly'});
+  if(state.localStream){
+    state.localStream.getTracks().forEach(t=>{pc.addTrack(t,state.localStream);_rtcMyTrackMeta[t.id]='mic';});
+  }
+  if(state._screenStream){
+    state._screenStream.getTracks().forEach(t=>{pc.addTrack(t,state._screenStream);_rtcMyTrackMeta[t.id]='screen';});
+  }
+
+  pc.onnegotiationneeded=async()=>{
+    try{
+      _rtcMakingOffer[otherUid]=true;
+      await pc.setLocalDescription();
+      fbSet(basePath+'/desc/'+myUid,{type:pc.localDescription.type,sdp:pc.localDescription.sdp,trackMeta:_rtcMyTrackMeta});
+    }catch(err){console.error('Error de negociación WebRTC:',err);}
+    finally{_rtcMakingOffer[otherUid]=false;}
+  };
+  pc.onicecandidate=({candidate})=>{if(candidate)fbPush(basePath+'/candidates/'+myUid,candidate.toJSON());};
+  pc.ontrack=(e)=>_renderRemoteTrack(otherUid,e);
+  pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState))_teardownPeer(otherUid);};
+
+  const descPath=basePath+'/desc/'+otherUid;
+  const descCb=async(snap)=>{
+    const data=snap.val();if(!data)return;
+    if(data.trackMeta)_rtcRemoteTrackMetaMap[otherUid]=data.trackMeta; // guardar antes de procesar, para que ontrack lo vea
+    const polite=_isPolite(myUid,otherUid);
+    const offerCollision=data.type==='offer'&&(_rtcMakingOffer[otherUid]||pc.signalingState!=='stable');
+    if(!polite&&offerCollision)return; // ignoramos su oferta, la nuestra prevalece
+    try{
+      await pc.setRemoteDescription({type:data.type,sdp:data.sdp});
+      if(data.type==='offer'){
+        await pc.setLocalDescription();
+        fbSet(basePath+'/desc/'+myUid,{type:pc.localDescription.type,sdp:pc.localDescription.sdp,trackMeta:_rtcMyTrackMeta});
+      }
+    }catch(err){console.error('Error setRemoteDescription WebRTC:',err);}
+  };
+  fbOn(descPath,descCb);
+
+  const candPath=basePath+'/candidates/'+otherUid;
+  const candCb=async(snap)=>{
+    const c=snap.val();if(!c)return;
+    try{await pc.addIceCandidate(c);}catch(err){/* candidato fuera de tiempo tras renegociar, se ignora */}
+  };
+  fbOnChild(candPath,candCb);
+
+  _rtcDescListeners[otherUid]={path:descPath,cb:descCb};
+  _rtcCandListeners[otherUid]={path:candPath,cb:candCb};
+  return pc;
+}
+
+function _renderRemoteTrack(otherUid,event){
+  if(event.track.kind==='audio'){
+    let el=document.getElementById('rtc-audio-'+otherUid);
+    if(!el){el=document.createElement('audio');el.id='rtc-audio-'+otherUid;el.autoplay=true;el.style.display='none';document.body.appendChild(el);}
+    el.srcObject=event.streams[0];
+  }else if(event.track.kind==='video'){
+    // En este sistema, la única fuente de video P2P es pantalla compartida.
+    let box=document.getElementById('rtc-screen-'+otherUid);
+    if(!box){
+      box=document.createElement('div');box.id='rtc-screen-'+otherUid;box.className='screen-share-box';
+      const srv=getServer(state.currentServerId);
+      const p=(srv?.members||[]).find(m=>(m.uid||m.id)===otherUid);
+      box.innerHTML=`<video autoplay playsinline></video><div class="screen-share-label">${p?.name||'Alguien'} está compartiendo pantalla</div>`;
+      document.getElementById('screen-share-area')?.appendChild(box);
+    }
+    box.querySelector('video').srcObject=event.streams[0];
+    box.style.display='block';
+    event.track.onended=()=>box.remove();
+  }
+}
+
+function _teardownPeer(otherUid){
+  const pc=_rtcPeers[otherUid];
+  if(pc){pc.close();delete _rtcPeers[otherUid];}
+  if(_rtcDescListeners[otherUid]){fbOff(_rtcDescListeners[otherUid].path,_rtcDescListeners[otherUid].cb);delete _rtcDescListeners[otherUid];}
+  if(_rtcCandListeners[otherUid]){fbOffChild(_rtcCandListeners[otherUid].path,_rtcCandListeners[otherUid].cb);delete _rtcCandListeners[otherUid];}
+  delete _rtcRemoteTrackMetaMap[otherUid];
+  document.getElementById('rtc-audio-'+otherUid)?.remove();
+  document.getElementById('rtc-screen-'+otherUid)?.remove();
+  // Limpiar mis propios nodos de señalización para esta pareja — evita que una
+  // futura reconexión reciba candidatos ICE/SDP obsoletos de esta sesión.
+  if(_rtcChannelId&&state.currentUser){
+    const myUid=state.currentUser.uid;
+    const base='calls/'+_rtcChannelId+'/rtc/'+_pairKey(myUid,otherUid);
+    fbRemove(base+'/desc/'+myUid).catch?.(()=>{});
+    fbRemove(base+'/candidates/'+myUid).catch?.(()=>{});
+  }
+}
+function _teardownAllPeers(){Object.keys(_rtcPeers).forEach(_teardownPeer);_rtcChannelId=null;_rtcMyTrackMeta={};}
+function _syncCallPeers(channelId,participantUids){
+  if(!state.currentUser)return;
+  _rtcChannelId=channelId;
+  const myUid=state.currentUser.uid;
+  const others=participantUids.filter(uid=>uid!==myUid);
+  others.forEach(uid=>_ensurePeer(channelId,uid));
+  Object.keys(_rtcPeers).forEach(uid=>{if(!others.includes(uid))_teardownPeer(uid);});
+}
+
+// ── PANTALLA COMPARTIDA ──
+async function toggleScreenShare(){
+  if(state._screenStream){stopScreenShare();return;}
+  if(!state.callActive){showToast('⚠️ Debes estar en una llamada para compartir pantalla');return;}
+  if(!navigator.mediaDevices?.getDisplayMedia){showToast('⚠️ Tu navegador/dispositivo no soporta compartir pantalla');return;}
+  try{
+    state._screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+    const track=state._screenStream.getVideoTracks()[0];
+    _rtcMyTrackMeta[track.id]='screen';
+    Object.values(_rtcPeers).forEach(pc=>pc.addTrack(track,state._screenStream));
+    if(state.callChannelId)fbUpdate('calls/'+state.callChannelId+'/participants/'+state.currentUser.uid,{sharingScreen:true});
+    track.onended=()=>stopScreenShare();
+    document.getElementById('screen-share-btn')?.classList.add('active');
+    showToast('🖥️ Compartiendo pantalla');
+  }catch(e){/* el usuario canceló el selector de pantalla, no hacer nada */}
+}
+function stopScreenShare(){
+  if(!state._screenStream)return;
+  state._screenStream.getTracks().forEach(t=>{
+    t.stop();
+    Object.values(_rtcPeers).forEach(pc=>{const sender=pc.getSenders().find(s=>s.track===t);if(sender)pc.removeTrack(sender);});
+  });
+  state._screenStream=null;
+  if(state.callChannelId)fbUpdate('calls/'+state.callChannelId+'/participants/'+state.currentUser.uid,{sharingScreen:false});
+  document.getElementById('screen-share-btn')?.classList.remove('active');
+  showToast('Dejaste de compartir pantalla');
+}
+
+
+async function startVoiceCall(listenOnly){
   if(state.callActive){showToast('Ya hay una llamada activa');return;}
   // En DMs: usar el canal DM como channelId de llamada
   const isDM=state.currentServerId==='__dm__';
@@ -4982,31 +5143,38 @@ async function startVoiceCall(){
     if(!srv){showToast('⚠️ Selecciona un servidor primero');return;}
   }
   try{
-    state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    state.localStream=listenOnly?null:await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    state.isMuted=false;
     state.callActive=true;state.callChannelId=callChId;state.callStartTime=Date.now();
     document.getElementById('call-bar').classList.add('active');
+    _updateMuteButtonsUI();
     startCallTimer();
-    fbSet('calls/'+callChId+'/participants/'+state.currentUser.uid,{uid:state.currentUser.uid,name:state.currentUser.name,avatarUrl:state.currentUser.avatarUrl||'',ts:Date.now()});
+    fbSet('calls/'+callChId+'/participants/'+state.currentUser.uid,{uid:state.currentUser.uid,name:state.currentUser.name,avatarUrl:state.currentUser.avatarUrl||'',ts:Date.now(),listenOnly:!!listenOnly});
     window._fbOnDisconnect(fbRef('calls/'+callChId+'/participants/'+state.currentUser.uid)).remove();
     state._callBarCb=snap=>{
       const parts=snap.exists()?Object.values(snap.val()):[];
       const cpEl=document.getElementById('call-participants');
       if(cpEl)cpEl.innerHTML=parts.map(p=>`<div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;border:2px solid var(--bg-0);margin-left:-6px;">${(p.name||'?')[0]}</div>`).join('');
+      if(state.callActive&&state.callChannelId===callChId)_syncCallPeers(callChId,parts.map(p=>p.uid));
     };
     state._callBarPath='calls/'+callChId+'/participants';
     fbOn(state._callBarPath,state._callBarCb);
-    showToast('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Llamada iniciada');
+    showToast(listenOnly?'🎧 Te uniste solo para escuchar':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Llamada iniciada');
   }catch(e){showToast('❌ No se pudo acceder al micrófono');}
 }
 function endCall(){
   if(!state.callActive)return;
   state.callActive=false;
+  if(state._screenStream){state._screenStream.getTracks().forEach(t=>t.stop());state._screenStream=null;}
+  _teardownAllPeers();
   if(state.localStream){state.localStream.getTracks().forEach(t=>t.stop());state.localStream=null;}
   if(state.callChannelId)fbRemove('calls/'+state.callChannelId+'/participants/'+state.currentUser.uid);
   if(state._callBarPath&&state._callBarCb){fbOff(state._callBarPath,state._callBarCb);state._callBarPath=null;state._callBarCb=null;}
   clearInterval(state.callTimerInterval);
   document.getElementById('call-bar').classList.remove('active');
   document.getElementById('call-timer').textContent='00:00';
+  const ssArea=document.getElementById('screen-share-area');if(ssArea)ssArea.innerHTML='';
+  document.getElementById('screen-share-btn')?.classList.remove('active');
   const endedChannelId=state.callChannelId;
   state.callChannelId=null;showToast('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Llamada terminada');
   if(endedChannelId&&state.currentChannelId===endedChannelId){
@@ -5015,8 +5183,42 @@ function endCall(){
   }
 }
 function startCallTimer(){state.callTimerInterval=setInterval(()=>{const e=Math.floor((Date.now()-state.callStartTime)/1000);document.getElementById('call-timer').textContent=String(Math.floor(e/60)).padStart(2,'0')+':'+String(e%60).padStart(2,'0');},1000);}
-function toggleCallMute(){if(!state.localStream)return;state.isMuted=!state.isMuted;state.localStream.getAudioTracks().forEach(t=>t.enabled=!state.isMuted);document.getElementById('call-mute-btn').textContent=state.isMuted?'🔇 Silenciado':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Silenciar';}
-function toggleMute(){state.isMuted=!state.isMuted;if(state.localStream)state.localStream.getAudioTracks().forEach(t=>t.enabled=!state.isMuted);document.getElementById('mute-btn').textContent=state.isMuted?'🔇':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';}
+function _updateMuteButtonsUI(){
+  const svgMic='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+  const callBtn=document.getElementById('call-mute-btn');
+  if(callBtn){
+    if(!state.localStream)callBtn.innerHTML='🎙️ Activar mic';
+    else callBtn.innerHTML=state.isMuted?'🔇 Silenciado':svgMic+' Silenciar';
+  }
+  const sideBtn=document.getElementById('mute-btn');
+  if(sideBtn)sideBtn.innerHTML=(!state.localStream)?svgMic:(state.isMuted?'🔇':svgMic);
+}
+async function _activateMicMidCall(){
+  try{
+    state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    state.isMuted=false;
+    state.localStream.getAudioTracks().forEach(t=>{
+      _rtcMyTrackMeta[t.id]='mic';
+      Object.values(_rtcPeers).forEach(pc=>pc.addTrack(t,state.localStream));
+    });
+    if(state.callChannelId)fbUpdate('calls/'+state.callChannelId+'/participants/'+state.currentUser.uid,{listenOnly:false});
+    _updateMuteButtonsUI();
+    showToast('🎙️ Micrófono activado');
+  }catch(e){showToast('❌ No se pudo acceder al micrófono');}
+}
+function toggleCallMute(){
+  if(!state.callActive)return;
+  if(!state.localStream){_activateMicMidCall();return;}
+  state.isMuted=!state.isMuted;
+  state.localStream.getAudioTracks().forEach(t=>t.enabled=!state.isMuted);
+  _updateMuteButtonsUI();
+}
+function toggleMute(){
+  if(!state.localStream){if(state.callActive)_activateMicMidCall();return;}
+  state.isMuted=!state.isMuted;
+  state.localStream.getAudioTracks().forEach(t=>t.enabled=!state.isMuted);
+  _updateMuteButtonsUI();
+}
 async function openVideoCall(){
   try{
     state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true});
@@ -5713,7 +5915,7 @@ function toggleAudioRecording(){
   const btn=document.getElementById('audio-record-btn');
   if(_audioRecorder&&_audioRecorder.state==='recording'){
     _audioRecorder.stop();
-    btn.textContent='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Grabar';
+    btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Grabar';
     btn.style.background='';
     clearInterval(_audioTimerInterval);
     return;
@@ -5742,7 +5944,7 @@ function toggleAudioRecording(){
       const m=String(Math.floor(_audioSeconds/60)).padStart(2,'0');
       const s=String(_audioSeconds%60).padStart(2,'0');
       timerEl.textContent=`${m}:${s}`;
-      if(_audioSeconds>=120){_audioRecorder.stop();btn.textContent='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Grabar';clearInterval(_audioTimerInterval);}
+      if(_audioSeconds>=120){_audioRecorder.stop();btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Grabar';clearInterval(_audioTimerInterval);}
     },1000);
     // Animated visualizer
     const viz=document.getElementById('audio-visualizer');
@@ -5757,7 +5959,7 @@ function closeAudioModal(){
   document.getElementById('audio-timer').textContent='00:00';
   document.getElementById('audio-preview').style.display='none';
   document.getElementById('audio-send-btn').style.display='none';
-  document.getElementById('audio-record-btn').textContent='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Grabar';
+  document.getElementById('audio-record-btn').innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Grabar';
   document.getElementById('audio-visualizer').innerHTML='';
   closeModal('audio-modal');
 }
@@ -5806,7 +6008,15 @@ function sendMsg(msg){
     state.messages[ch].push(msg);
     renderMessages();
   }
-  if(isDM){const dmId=getDMId(state.currentUser.uid,state.currentDmUid);fbSet('dmMessages/'+dmId+'/'+msg.id,msg);}
+  if(isDM){
+    const dmId=getDMId(state.currentUser.uid,state.currentDmUid);
+    fbSet('dmMessages/'+dmId+'/'+msg.id,msg);
+    const u=state.currentUser,otherUid=state.currentDmUid;
+    const otherInfo=state.dmConversations[otherUid]||{name:'?'};
+    const lastMsgPreview=msg.audioData?'🎤 Mensaje de voz':msg.imageData?'🖼️ Imagen':(msg.content||'').substring(0,40);
+    fbSet('dms/'+u.uid+'/'+otherUid,{uid:otherUid,name:otherInfo.name,avatarUrl:otherInfo.avatarUrl||'',lastMsg:lastMsgPreview,ts:Date.now()});
+    fbSet('dms/'+otherUid+'/'+u.uid,{uid:u.uid,name:u.name,avatarUrl:u.avatarUrl||'',lastMsg:lastMsgPreview,ts:Date.now()});
+  }
   else{fbSet('state/messages/'+ch+'/'+msg.id,msg);}
 }
 
