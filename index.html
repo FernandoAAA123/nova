@@ -202,6 +202,15 @@ select option{background:var(--bg-3);color:var(--text-0);}
 
 /* CHAT AREA */
 #chat-area{flex:1;display:flex;flex-direction:column;background:var(--bg-2);min-width:0;}
+#chat-split-row{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;}
+#call-stage-col{display:flex;flex-direction:column;flex-shrink:0;min-width:0;}
+#chat-main-col{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;}
+/* Modo dividido (estilo Discord): pantalla compartida a la izquierda, chat angosto a la derecha */
+#chat-split-row.split-view{flex-direction:row;}
+#chat-split-row.split-view #call-stage-col{display:flex;flex:1;min-width:0;overflow:auto;background:#000;}
+#chat-split-row.split-view #chat-main-col{flex:0 0 340px;border-left:1px solid var(--border);}
+#chat-split-row.split-view #screen-share-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
+#chat-split-row.split-view .screen-share-box{width:100%;max-width:none;}
 #chat-header{height:52px;display:flex;align-items:center;padding:0 16px;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg-2);}
 #chat-header .ch-name{font-weight:700;font-size:.9rem;color:var(--text-0);flex:1;letter-spacing:-.01em;display:flex;align-items:center;gap:6px;}
 #chat-header .ch-name .ch-icon-hdr{font-size:.85rem;color:var(--text-3);}
@@ -908,7 +917,12 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <button class="call-btn" id="screen-share-btn" onclick="toggleScreenShare()" title="Compartir pantalla" style="background:var(--bg-4);color:var(--text-1);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Pantalla</button>
       <button class="call-btn end" onclick="endCall()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.37 1.93.58 2.96.58a2 2 0 0 1 2 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07C9.44 17.25 7.76 15.57 6.46 13.56A19.79 19.79 0 0 1 3.39 4.93 2 2 0 0 1 5.37 2.75h3a2 2 0 0 1 2 1.72c.127.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11l-1.27 1.27"/><line x1="23" y1="1" x2="1" y2="23"/></svg> Colgar</button>
     </div>
-    <div id="screen-share-area"></div>
+    <div id="chat-split-row">
+    <div id="call-stage-col">
+      <div id="screen-share-area"></div>
+      <div id="voice-room-panel" style="display:none;"></div>
+    </div>
+    <div id="chat-main-col">
     <div id="chat-header">
       <button class="icon-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" style="display:none;font-size:1.1rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <span class="ch-name" id="chat-channel-name">Selecciona un canal</span>
@@ -948,7 +962,6 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       <span id="featured-banner-text" style="flex:1;margin:0 8px;"></span>
       <span onclick="closeFeaturedBanner()" style="color:var(--text-3);cursor:pointer;display:inline-flex;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
     </div>
-    <div id="voice-room-panel" style="display:none;"></div>
     <div id="messages"></div>
     <div class="typing-indicator" id="typing-indicator"></div>
     <div class="reply-bar" id="reply-bar">
@@ -1005,6 +1018,8 @@ input[type=color]{width:32px;height:32px;border:none;border-radius:var(--r-xs);c
       </div>
     </div>
     <div id="mobile-input-spacer"></div>
+    </div>
+    </div>
   </div>
   <div id="members-panel">
     <div id="members-header">Miembros</div>
@@ -4990,6 +5005,14 @@ function insertCustomEmoji(idx){
 }
 
 // ── CALLS ──
+function _updateSplitView(){
+  const row=document.getElementById('chat-split-row');if(!row)return;
+  const hasScreenShare=(document.getElementById('screen-share-area')?.children.length||0)>0;
+  const wideEnough=window.innerWidth>=900;
+  row.classList.toggle('split-view',hasScreenShare&&wideEnough);
+}
+window.addEventListener('resize',_updateSplitView);
+
 // ── WEBRTC: AUDIO REAL ENTRE PARTICIPANTES + PANTALLA COMPARTIDA ──
 // Mesh P2P: cada participante abre una conexión directa con cada otro.
 // Bien para llamadas chicas/medianas; no escala a salas enormes (no hay SFU).
@@ -5082,7 +5105,8 @@ function _renderRemoteTrack(otherUid,event){
     }
     box.querySelector('video').srcObject=event.streams[0];
     box.style.display='block';
-    event.track.onended=()=>box.remove();
+    _updateSplitView();
+    event.track.onended=()=>{box.remove();_updateSplitView();};
   }
 }
 
@@ -5126,6 +5150,15 @@ async function toggleScreenShare(){
     if(state.callChannelId)fbUpdate('calls/'+state.callChannelId+'/participants/'+state.currentUser.uid,{sharingScreen:true});
     track.onended=()=>stopScreenShare();
     document.getElementById('screen-share-btn')?.classList.add('active');
+    let myBox=document.getElementById('rtc-screen-self');
+    if(!myBox){
+      myBox=document.createElement('div');myBox.id='rtc-screen-self';myBox.className='screen-share-box';
+      myBox.innerHTML='<video autoplay playsinline muted></video><div class="screen-share-label">Estás compartiendo tu pantalla</div>';
+      document.getElementById('screen-share-area')?.appendChild(myBox);
+    }
+    myBox.querySelector('video').srcObject=state._screenStream;
+    myBox.style.display='block';
+    _updateSplitView();
     showToast('🖥️ Compartiendo pantalla');
   }catch(e){/* el usuario canceló el selector de pantalla, no hacer nada */}
 }
@@ -5138,6 +5171,8 @@ function stopScreenShare(){
   state._screenStream=null;
   if(state.callChannelId)fbUpdate('calls/'+state.callChannelId+'/participants/'+state.currentUser.uid,{sharingScreen:false});
   document.getElementById('screen-share-btn')?.classList.remove('active');
+  document.getElementById('rtc-screen-self')?.remove();
+  _updateSplitView();
   showToast('Dejaste de compartir pantalla');
 }
 
@@ -5185,6 +5220,7 @@ function endCall(){
   document.getElementById('call-bar').classList.remove('active');
   document.getElementById('call-timer').textContent='00:00';
   const ssArea=document.getElementById('screen-share-area');if(ssArea)ssArea.innerHTML='';
+  _updateSplitView();
   document.getElementById('screen-share-btn')?.classList.remove('active');
   const endedChannelId=state.callChannelId;
   state.callChannelId=null;showToast('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.55 5.55l1.96-1.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Llamada terminada');
